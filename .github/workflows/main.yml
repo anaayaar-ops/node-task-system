@@ -1,16 +1,17 @@
-name: WOLF 20-Hour System (Rest after 3 AM)
+name: Node Task System
 
 on:
-  workflow_dispatch:
   schedule:
-    - cron: '0 4 * * *'
+    # يعمل كل 3 ساعات (00:00, 03:00, 06:00...) بتوقيت UTC
+    - cron: '0 */3 * * *'
+  workflow_dispatch: # للتشغيل اليدوي
 
 concurrency:
-  group: wolf-bot-session
+  group: system-session
   cancel-in-progress: true 
 
 jobs:
-  run-bot:
+  run-task:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -21,10 +22,10 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Install dependencies
-        run: npm install
+      - name: Install Dependencies
+        run: npm install wolf.js dotenv
 
-      - name: Start 20-Hour Cycle
+      - name: Execute System
         env:
           U_MAIL: ${{ secrets.U_MAIL }}
           U_PASS: ${{ secrets.U_PASS }}
@@ -33,5 +34,5 @@ jobs:
           MATCH_V: ${{ secrets.MATCH_V }}
           EXEC_V: ${{ secrets.EXEC_V }}
         run: |
-          echo "🚀 Cycle started at 7 AM KSA. Will rest at 3 AM KSA."
-          timeout 1200m node app.js || echo "✅ Rest period started (3 AM KSA)"
+          echo "🚀 Starting 3-Hour Processing Cycle..."
+          node app.js
