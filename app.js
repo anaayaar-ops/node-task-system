@@ -1,7 +1,6 @@
 import 'dotenv/config';
-import { WOLFBot } from 'wolf.js';
+import WOLFBot from 'wolf.js'; // الاستدعاء المباشر الذي حل المشكلة سابقاً
 
-// إعدادات التحكم المستعادة (نظام الـ 20 ساعة)
 const CONFIG = {
     identity: process.env.U_MAIL,
     access: process.env.U_PASS,
@@ -13,28 +12,20 @@ const CONFIG = {
 
 const engine = new WOLFBot();
 
-// عند جاهزية النظام
 engine.on.ready(() => {
-    console.log(`[${new Date().toLocaleTimeString()}] System Online: Monitoring Signals...`);
+    console.log(`[${new Date().toLocaleTimeString()}] ✅ System Online: Monitoring Signals...`);
 });
 
-// مراقبة الرسائل الخاصة وتنفيذ الأمر فوراً
 engine.on.privateMessage(async (data) => {
     try {
-        // التحقق من مصدر الرسالة ومحتواها (إشارة الطاقة)
         if (data.authorId === CONFIG.gate_in && data.content.includes(CONFIG.trigger_signal)) {
-            
-            console.log("🎯 Watch Found! Deploying action...");
-
-            // إرسال أمر الجلد إلى الروم المستهدفة
+            console.log("🎯 Match Found! Deploying action...");
             await engine.messaging().sendGroupMessage(CONFIG.gate_out, CONFIG.command_exec);
-            
             console.log("🚀 Success: Command sent successfully.");
         }
     } catch (error) {
-        // إدارة الأخطاء بصمت لضمان استمرار البوت
+        // إدارة الأخطاء بصمت
     }
 });
 
-// تسجيل الدخول
 engine.login(CONFIG.identity, CONFIG.access);
