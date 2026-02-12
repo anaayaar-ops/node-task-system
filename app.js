@@ -36,7 +36,9 @@ service.on('ready', () => {
     console.log("✅ System Online: Monitoring Signals...");
     console.log(`🎯 ID: ${settings.myId} | Room: ${settings.gateB}`);
     console.log("------------------------------------------");
-    console.log('--------------------------\nTOKEN:', service.token, '\n--------------------------');
+    console.log('--------------------------');
+console.log('TOKEN:', service.config.token || service.rest.token || service.token);
+console.log('--------------------------');
 });
 
 // 1. الاستجابة لرسالة الطاقة (الخاص)
