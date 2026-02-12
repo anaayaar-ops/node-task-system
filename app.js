@@ -10,65 +10,73 @@ const settings = {
     gateB: parseInt(process.env.EXIT_P),  
     trigger: process.env.MATCH_V,         
     action: process.env.EXEC_V,
-    notifyMsg: process.env.NOTIFY_MSG || "✅ تم تنفيذ الهجوم بنجاح بعد الانتظار!"
+    notifyMsg: process.env.NOTIFY_MSG || "✅ تم تخطي وقت الانتظار وإعادة اللعب بنجاح!"
 };
 
 const service = new WOLF();
 let myId = null;
 
-// دالة الإرسال مع نظام التنبيه
+// دالة الإرسال
 const sendCommand = async (isRetry = false) => {
     try {
         await service.messaging().sendGroupMessage(settings.gateB, settings.action);
-        console.log(`🚀 تم إرسال الأمر: [${settings.action}]`);
+        console.log(`🚀 تم تنفيذ الأمر: [${settings.action}]`);
         
-        // إرسال تنبيه في الخاص عند النجاح بعد إعادة المحاولة
         if (isRetry) {
             await service.messaging().sendPrivateMessage(settings.gateA, settings.notifyMsg);
         }
     } catch (err) {
-        console.log("❌ فشل الإرسال:", err.message);
+        console.log("❌ فشل في الإرسال:", err.message);
     }
 };
 
 service.on('ready', async () => {
-    // جلب بيانات البوت وتخزين رقم العضوية
-    const currentUser = await service.currentSubscriber();
-    myId = currentUser.id;
+    try {
+        // تصحيح جلب الـ ID: في بعض الإصدارات تكون الخاصية مباشرة
+        const me = await service.subscriber().current();
+        myId = me.id;
 
-    // تغيير حالة الحساب إلى "مشغول" (القيمة 2 تعني Busy)
-    await service.updatePresence(2);
-    
-    console.log(`✅ البوت متصل | العضوية: [${myId}] | الحالة: [مشغول] | الروم: [${settings.gateB}]`);
+        // تغيير الحالة إلى مشغول (2 = Busy)
+        await service.updatePresence(2);
+        
+        console.log(`------------------------------------------`);
+        console.log(`✅ البوت متصل | العضوية: [${myId}]`);
+        console.log(`✅ الحالة: [مشغول] | الروم المستهدف: [${settings.gateB}]`);
+        console.log(`------------------------------------------`);
+    } catch (err) {
+        console.log("⚠️ فشل جلب بيانات الحساب، لكن البوت سيستمر...");
+    }
 });
 
 service.on('groupMessage', async (message) => {
+    // حماية للتأكد من وجود نص في الرسالة لتجنب خطأ (includes)
     const text = message.content || "";
+    if (!text) return;
 
-    // التحقق من الروم + جملة انشغال السباق + التأكد أن الرسالة موجهة لرقم عضوية البوت
-    if (message.targetGroupId === settings.gateB && 
-        text.includes("ما زال السباق جاريًا") && 
-        text.includes(myId.toString())) {
+    // التحقق من النص ورقم العضوية (إذا تم جلبه)
+    if (message.targetGroupId === settings.gateB && text.includes("ما زال السباق جاريًا")) {
         
-        // استخراج الثواني المطلوبة للانتظار
-        const match = text.match(/\d+/);
-        const waitSeconds = match ? parseInt(match[0]) : 10;
-        
-        console.log(`⚠️ الرسالة موجهة لي. سأنتظر ${waitSeconds} ثانية قبل إعادة المحاولة...`);
+        // التحقق من ID العضوية داخل النص لضمان أنها لك
+        if (myId && text.includes(myId.toString())) {
+            const match = text.match(/\d+/);
+            const waitSeconds = match ? parseInt(match[0]) : 15;
+            
+            console.log(`⚠️ تنبيه: السباق مستمر لي (ID: ${myId}). سأنتظر ${waitSeconds} ثانية...`);
 
-        setTimeout(async () => {
-            console.log("🔄 إعادة المحاولة الآن...");
-            await sendCommand(true);
-        }, (waitSeconds + 1) * 1000); // أضفنا ثانية أمان
+            setTimeout(async () => {
+                console.log(`🔄 انتهى الانتظار. إعادة اللعب الآن...`);
+                await sendCommand(true);
+            }, (waitSeconds + 1) * 1000);
+        }
     }
 });
 
 service.on('privateMessage', async (message) => {
     const senderId = message.authorId || message.sourceSubscriberId;
+    const text = message.content || "";
     
-    // استقبال إشارة اكتمال الطاقة من الحساب المصدر
-    if (senderId === settings.gateA && message.content.includes(settings.trigger)) {
-        console.log("🎯 رصد إشارة طاقة. جاري الهجوم...");
+    if (senderId === settings.gateA && text.includes(settings.trigger)) {
+        console.log("🎯 إشارة طاقة واردة! جاري بدء اللعب...");
         await sendCommand(false);
     }
 });
