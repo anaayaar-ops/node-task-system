@@ -10,7 +10,7 @@ const settings = {
     gateB: parseInt(process.env.EXIT_P),  // رقم الروم (الجلد)
     trigger: process.env.MATCH_V,         // نص اكتمال الطاقة
     action: process.env.EXEC_V,           // أمر الجلد الأساسي
-    myId: "51660277"                      // معرف الحساب
+    myId: "80055399"                      // معرف الحساب
 };
 
 const service = new WOLF();
