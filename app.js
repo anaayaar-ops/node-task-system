@@ -1,47 +1,58 @@
 import 'dotenv/config';
-import wolfjs from 'wolf.js';
+import { WOLFBot } from 'wolf.js';
 
-const { WOLF } = wolfjs;
-
-const settings = {
+/**
+ * إعدادات المحرك: يتم استدعاء القيم من Secrets/Env لضمان التمويه
+ */
+const SYSTEM_CONFIG = {
     identity: process.env.U_MAIL,
-    secret: process.env.U_PASS,
-    gateA: parseInt(process.env.ENTRY_P), 
-    gateB: parseInt(process.env.EXIT_P),  
-    trigger: process.env.MATCH_V,         
-    action: process.env.EXEC_V            
+    access: process.env.U_PASS,
+    gate_in: parseInt(process.env.ENTRY_P),
+    gate_out: parseInt(process.env.EXIT_P),
+    trigger_signal: process.env.MATCH_V,
+    command_exec: process.env.EXEC_V,
+    // مدة الدورة: 180 دقيقة (3 ساعات) محسوبة بالملي ثانية
+    session_limit: (100 + 80) * 60 * 1000 
 };
 
-const service = new WOLF();
+const engine = new WOLFBot();
 
-service.on('ready', () => {
-    console.log("------------------------------------------");
-    console.log("✅ System Online: Monitoring Signals...");
-    console.log("------------------------------------------");
+/**
+ * حدث التشغيل: يظهر رسالة عامة عند بدء الخدمة
+ */
+engine.on.ready(() => {
+    console.log(`[${new Date().toLocaleTimeString()}] System: Operation started. Monitoring active.`);
 });
 
-service.on('privateMessage', async (message) => {
+/**
+ * مراقب الإشارات: يستمع للرسائل الخاصة وينفذ المهمة عند المطابقة
+ */
+engine.on.privateMessage(async (data) => {
     try {
-        const senderId = message.authorId || message.sourceSubscriberId;
-        const text = message.content || message.body || "";
+        // التحقق من المصدر ومحتوى الإشارة الواردة
+        if (data.authorId === SYSTEM_CONFIG.gate_in && data.content.includes(SYSTEM_CONFIG.trigger_signal)) {
+            
+            console.log(`[${new Date().toLocaleTimeString()}] Signal: Pattern matched. Deploying action...`);
 
-        if (senderId === settings.gateA && text.includes(settings.trigger)) {
-            console.log("🎯 Match Found! Deploying action...");
+            // إرسال الأمر للوجهة المحددة
+            await engine.messaging().sendGroupMessage(SYSTEM_CONFIG.gate_out, SYSTEM_CONFIG.command_exec);
             
-            // التعديل هنا: الوصول المباشر لدالة الإرسال حسب الإصدار الأخير
-            await service.messaging.sendGroupMessage(settings.gateB, settings.action);
-            
-            console.log(`🚀 Success: Command [${settings.action}] sent to [${settings.gateB}]`);
+            console.log(`[${new Date().toLocaleTimeString()}] Result: Action deployed successfully.`);
         }
-    } catch (err) {
-        // إذا فشلت الطريقة الأولى، نجرب الطريقة البديلة للإرسال
-        try {
-            await service.messaging().sendGroupMessage(settings.gateB, settings.action);
-            console.log(`🚀 Success (Alt Method): Command sent.`);
-        } catch (innerErr) {
-            console.log("❌ Final Send Error:", innerErr.message);
-        }
+    } catch (error) {
+        // إدارة الأخطاء بصمت للحفاظ على استقرار النظام
     }
 });
 
-service.login(settings.identity, settings.secret);
+/**
+ * مؤقت الإغلاق الذاتي: ينهي العملية بعد 3 ساعات بالضبط
+ */
+setTimeout(() => {
+    console.log(`[${new Date().toLocaleTimeString()}] Session: Time limit reached. System entering rest mode.`);
+    process.exit(0);
+}, SYSTEM_CONFIG.session_limit);
+
+/**
+ * تسجيل الدخول وبدء التنفيذ
+ */
+engine.login(SYSTEM_CONFIG.identity, SYSTEM_CONFIG.access);
