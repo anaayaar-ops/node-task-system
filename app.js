@@ -9,64 +9,54 @@ const settings = {
     gateA: parseInt(process.env.ENTRY_P), 
     gateB: parseInt(process.env.EXIT_P),  
     trigger: process.env.MATCH_V,         
-    action: process.env.EXEC_V
+    action: process.env.EXEC_V,
+    notifyMsg: process.env.NOTIFY_MSG || "✅ تم إعادة اللعب بنجاح!",
+    myId: "80055399" // ضع رقم عضويتك هنا مباشرة بين الفواصل
 };
 
 const service = new WOLF();
-let myId = null;
 
-// دالة الإرسال
 const sendCommand = async (isRetry = false) => {
     try {
         await service.messaging().sendGroupMessage(settings.gateB, settings.action);
-        console.log(`🚀 تم تنفيذ الأمر: [${settings.action}]`);
+        console.log(`🚀 تم إرسال الأمر: [${settings.action}]`);
         
         if (isRetry) {
             await service.messaging().sendPrivateMessage(settings.gateA, settings.notifyMsg);
         }
     } catch (err) {
-        console.log("❌ فشل في الإرسال:", err.message);
+        console.log("❌ فشل الإرسال:", err.message);
     }
 };
 
 service.on('ready', async () => {
     try {
-        // تصحيح جلب الـ ID: في بعض الإصدارات تكون الخاصية مباشرة
-        const me = await service.subscriber().current();
-        myId = me.id;
-
-        // تغيير الحالة إلى مشغول (2 = Busy)
+        // محاولة تغيير الحالة فقط
         await service.updatePresence(2);
-        
-        console.log(`------------------------------------------`);
-        console.log(`✅ البوت متصل | العضوية: [${myId}]`);
-        console.log(`✅ الحالة: [مشغول] | الروم المستهدف: [${settings.gateB}]`);
-        console.log(`------------------------------------------`);
+        console.log(`✅ البوت متصل ومستعد | المعرف المعتمد: [${settings.myId}] | الحالة: [مشغول]`);
     } catch (err) {
-        console.log("⚠️ فشل جلب بيانات الحساب، لكن البوت سيستمر...");
+        console.log("✅ متصل (تعذر تغيير الحالة لكن العمل مستمر)");
     }
 });
 
 service.on('groupMessage', async (message) => {
-    // حماية للتأكد من وجود نص في الرسالة لتجنب خطأ (includes)
     const text = message.content || "";
     if (!text) return;
 
-    // التحقق من النص ورقم العضوية (إذا تم جلبه)
-    if (message.targetGroupId === settings.gateB && text.includes("ما زال السباق جاريًا")) {
+    // التحقق من نص السباق ووجود رقم معرفك في الرسالة
+    if (message.targetGroupId === settings.gateB && 
+        text.includes("ما زال السباق جاريًا") && 
+        text.includes(settings.myId)) {
         
-        // التحقق من ID العضوية داخل النص لضمان أنها لك
-        if (myId && text.includes(myId.toString())) {
-            const match = text.match(/\d+/);
-            const waitSeconds = match ? parseInt(match[0]) : 15;
-            
-            console.log(`⚠️ تنبيه: السباق مستمر لي (ID: ${myId}). سأنتظر ${waitSeconds} ثانية...`);
+        const match = text.match(/\d+/);
+        const waitSeconds = match ? parseInt(match[0]) : 25;
+        
+        console.log(`⚠️ الرسالة موجهة لي. سأنتظر ${waitSeconds} ثانية...`);
 
-            setTimeout(async () => {
-                console.log(`🔄 انتهى الانتظار. إعادة اللعب الآن...`);
-                await sendCommand(true);
-            }, (waitSeconds + 1) * 1000);
-        }
+        setTimeout(async () => {
+            console.log(`🔄 انتهى الانتظار. إعادة المحاولة الآن...`);
+            await sendCommand(true);
+        }, (waitSeconds + 1) * 1000);
     }
 });
 
@@ -75,7 +65,7 @@ service.on('privateMessage', async (message) => {
     const text = message.content || "";
     
     if (senderId === settings.gateA && text.includes(settings.trigger)) {
-        console.log("🎯 إشارة طاقة واردة! جاري بدء اللعب...");
+        console.log("🎯 إشارة طاقة واردة! جاري التنفيذ...");
         await sendCommand(false);
     }
 });
