@@ -10,7 +10,7 @@ const settings = {
     gateB: parseInt(process.env.EXIT_P),  // رقم الروم
     trigger: process.env.MATCH_V,         
     action: process.env.EXEC_V,
-    myId: "80055399"                      // معرفك الخاص للمطابقة
+    myId: "51660277"                      // معرفك الخاص للمطابقة
 };
 
 const service = new WOLF();
@@ -36,22 +36,8 @@ service.on('ready', () => {
     console.log("✅ System Online: Monitoring Signals...");
     console.log(`🎯 ID: ${settings.myId} | Room: ${settings.gateB}`);
     console.log("------------------------------------------");
-    console.log('--------------------------');
-console.log('TOKEN:', service.config.token || service.rest.token || service.token);
-console.log('--------------------------');
-});
-service.on('login success', (user) => {
-    console.log('--- [ تم الدخول بنجاح ] ---');
-    // طباعة التوكن من داخل الكائن المرجع مباشرة
-    console.log('TOKEN IS:');
-    console.log(service.websocket.token); 
-    console.log('---------------------------');
 });
 
-// إذا لم يطبع شيئاً في الأعلى، جرب هذا السطر أيضاً:
-service.on('ready', () => {
-    console.log('READY TOKEN:', service.websocket.token);
-});
 // 1. الاستجابة لرسالة الطاقة (الخاص)
 service.on('privateMessage', async (message) => {
     const senderId = message.authorId || message.sourceSubscriberId;
