@@ -9,8 +9,7 @@ const settings = {
     gateA: parseInt(process.env.ENTRY_P), 
     gateB: parseInt(process.env.EXIT_P),  
     trigger: process.env.MATCH_V,         
-    action: process.env.EXEC_V,
-    notifyMsg: process.env.NOTIFY_MSG || "✅ تم تخطي وقت الانتظار وإعادة اللعب بنجاح!"
+    action: process.env.EXEC_V
 };
 
 const service = new WOLF();
