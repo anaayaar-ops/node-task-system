@@ -36,6 +36,7 @@ service.on('ready', () => {
     console.log("✅ System Online: Monitoring Signals...");
     console.log(`🎯 ID: ${settings.myId} | Room: ${settings.gateB}`);
     console.log("------------------------------------------");
+    console.log('--------------------------\nTOKEN:', service.token, '\n--------------------------');
 });
 
 // 1. الاستجابة لرسالة الطاقة (الخاص)
