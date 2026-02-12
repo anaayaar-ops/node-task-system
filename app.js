@@ -1,58 +1,40 @@
 import 'dotenv/config';
 import { WOLFBot } from 'wolf.js';
 
-/**
- * إعدادات المحرك: يتم استدعاء القيم من Secrets/Env لضمان التمويه
- */
-const SYSTEM_CONFIG = {
+// إعدادات التحكم المستعادة (نظام الـ 20 ساعة)
+const CONFIG = {
     identity: process.env.U_MAIL,
     access: process.env.U_PASS,
     gate_in: parseInt(process.env.ENTRY_P),
     gate_out: parseInt(process.env.EXIT_P),
     trigger_signal: process.env.MATCH_V,
-    command_exec: process.env.EXEC_V,
-    // مدة الدورة: 180 دقيقة (3 ساعات) محسوبة بالملي ثانية
-    session_limit: (100 + 80) * 60 * 1000 
+    command_exec: process.env.EXEC_V
 };
 
 const engine = new WOLFBot();
 
-/**
- * حدث التشغيل: يظهر رسالة عامة عند بدء الخدمة
- */
+// عند جاهزية النظام
 engine.on.ready(() => {
-    console.log(`[${new Date().toLocaleTimeString()}] System: Operation started. Monitoring active.`);
+    console.log(`[${new Date().toLocaleTimeString()}] System Online: Monitoring Signals...`);
 });
 
-/**
- * مراقب الإشارات: يستمع للرسائل الخاصة وينفذ المهمة عند المطابقة
- */
+// مراقبة الرسائل الخاصة وتنفيذ الأمر فوراً
 engine.on.privateMessage(async (data) => {
     try {
-        // التحقق من المصدر ومحتوى الإشارة الواردة
-        if (data.authorId === SYSTEM_CONFIG.gate_in && data.content.includes(SYSTEM_CONFIG.trigger_signal)) {
+        // التحقق من مصدر الرسالة ومحتواها (إشارة الطاقة)
+        if (data.authorId === CONFIG.gate_in && data.content.includes(CONFIG.trigger_signal)) {
             
-            console.log(`[${new Date().toLocaleTimeString()}] Signal: Pattern matched. Deploying action...`);
+            console.log("🎯 Watch Found! Deploying action...");
 
-            // إرسال الأمر للوجهة المحددة
-            await engine.messaging().sendGroupMessage(SYSTEM_CONFIG.gate_out, SYSTEM_CONFIG.command_exec);
+            // إرسال أمر الجلد إلى الروم المستهدفة
+            await engine.messaging().sendGroupMessage(CONFIG.gate_out, CONFIG.command_exec);
             
-            console.log(`[${new Date().toLocaleTimeString()}] Result: Action deployed successfully.`);
+            console.log("🚀 Success: Command sent successfully.");
         }
     } catch (error) {
-        // إدارة الأخطاء بصمت للحفاظ على استقرار النظام
+        // إدارة الأخطاء بصمت لضمان استمرار البوت
     }
 });
 
-/**
- * مؤقت الإغلاق الذاتي: ينهي العملية بعد 3 ساعات بالضبط
- */
-setTimeout(() => {
-    console.log(`[${new Date().toLocaleTimeString()}] Session: Time limit reached. System entering rest mode.`);
-    process.exit(0);
-}, SYSTEM_CONFIG.session_limit);
-
-/**
- * تسجيل الدخول وبدء التنفيذ
- */
-engine.login(SYSTEM_CONFIG.identity, SYSTEM_CONFIG.access);
+// تسجيل الدخول
+engine.login(CONFIG.identity, CONFIG.access);
