@@ -1,5 +1,6 @@
 import 'dotenv/config';
-import WOLFBot from 'wolf.js'; // الاستدعاء المباشر الذي حل مشكلة الـ SyntaxError
+import pkg from 'wolf.js';
+const { WOLFBot } = pkg; // هذه هي الطريقة التي جعلت البوت يعمل في اللاب توب
 
 const CONFIG = {
     identity: process.env.U_MAIL,
