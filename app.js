@@ -6,61 +6,68 @@ const { WOLF } = wolfjs;
 const settings = {
     identity: process.env.U_MAIL,
     secret: process.env.U_PASS,
-    gateA: 80277459,              // معرف البوت الذي يرسل رسالة الطاقة
-    gateB: parseInt(process.env.EXIT_P), // رقم الروم (القناة)
-    trigger: process.env.MATCH_V,         // "Your animal is back to full energy!"
-    action: process.env.EXEC_V,           // "!س جلد خاص 80055399"
-    myId: "80055399"                      // رقم عضويتك للتأكد من رسالة السباق
+    gateA: parseInt(process.env.ENTRY_P), // معرف البوت مصدر الطاقة
+    gateB: parseInt(process.env.EXIT_P),  // رقم الروم
+    trigger: process.env.MATCH_V,         
+    action: process.env.EXEC_V,
+    myId: "80055399"                      // معرفك الخاص للمطابقة
 };
 
 const service = new WOLF();
 
-// دالة إرسال الأمر للروم
-const sendToGroup = async () => {
+// دالة الإرسال الأصلية الخاصة بك معالجة داخل وظيفة مستقلة لتسهيل استدعائها
+const executeAction = async () => {
     try {
-        await service.messaging().sendGroupMessage(settings.gateB, settings.action);
-        console.log(`🚀 تم إرسال أمر الجلد إلى الروم [${settings.gateB}]`);
+        console.log("🎯 محاولة تنفيذ الإرسال...");
+        await service.messaging.sendGroupMessage(settings.gateB, settings.action);
+        console.log(`🚀 تم الإرسال بنجاح إلى [${settings.gateB}]`);
     } catch (err) {
-        console.log("❌ فشل الإرسال للروم:", err.message);
+        try {
+            await service.messaging().sendGroupMessage(settings.gateB, settings.action);
+            console.log(`🚀 تم الإرسال بنجاح (طريقة بديلة)`);
+        } catch (innerErr) {
+            console.error("❌ فشل الإرسال بكلا الطريقتين:", innerErr.message);
+        }
     }
 };
 
 service.on('ready', () => {
-    console.log(`✅ البوت متصل بنجاح.`);
-    console.log(`📡 يراقب الطاقة من: [${settings.gateA}]`);
-    console.log(`📡 يراقب السباق لـ: [${settings.myId}] في الروم [${settings.gateB}]`);
+    console.log("------------------------------------------");
+    console.log("✅ System Online: Monitoring Signals...");
+    console.log(`🎯 ID: ${settings.myId} | Room: ${settings.gateB}`);
+    console.log("------------------------------------------");
 });
 
-// 1. مراقبة رسائل الخاص (لرسالة الطاقة)
+// 1. الاستجابة لرسالة الطاقة (الخاص)
 service.on('privateMessage', async (message) => {
     const senderId = message.authorId || message.sourceSubscriberId;
-    const text = message.content || "";
+    const text = message.content || message.body || "";
 
     if (senderId === settings.gateA && text.includes(settings.trigger)) {
-        console.log("⚡ تم استلام رسالة الطاقة من البوت! جاري التنفيذ...");
-        await sendToGroup();
+        console.log("⚡ رصد رسالة طاقة! جاري الجلد...");
+        await executeAction();
     }
 });
 
-// 2. مراقبة رسائل الروم (لإعادة المحاولة إذا كان السباق جارياً)
+// 2. الاستجابة لرسالة "السباق جاري" (الروم) وإعادة المحاولة
 service.on('groupMessage', async (message) => {
-    const text = message.content || "";
-    if (!text) return;
+    const text = message.content || message.body || "";
 
-    // التأكد أن الرسالة في الروم الصحيح + تحتوي على جملة السباق + تحتوي على رقم عضويتك
+    // التحقق من الروم + النص + معرفك
     if (message.targetGroupId === settings.gateB && 
         text.includes("ما زال السباق جاريًا") && 
         text.includes(settings.myId)) {
         
-        // استخراج الثواني من الرسالة
+        // استخراج الثواني
         const match = text.match(/\d+/);
         const waitSeconds = match ? parseInt(match[0]) : 25;
         
-        console.log(`⚠️ السباق لا يزال جارياً لـ [${settings.myId}]. سأنتظر ${waitSeconds} ثانية...`);
+        console.log(`⚠️ السباق جارٍ لـ [${settings.myId}]. انتظار ${waitSeconds} ثانية...`);
 
+        // الانتظار ثم إعادة المحاولة
         setTimeout(async () => {
-            console.log(`🔄 انتهى الانتظار. إعادة المحاولة الآن...`);
-            await sendToGroup();
+            console.log("🔄 انتهى الوقت. إعادة محاولة الجلد الآن...");
+            await executeAction();
         }, (waitSeconds + 1) * 1000);
     }
 });
