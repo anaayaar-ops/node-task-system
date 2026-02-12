@@ -6,98 +6,76 @@ const { WOLF } = wolfjs;
 const settings = {
     identity: process.env.U_MAIL,
     secret: process.env.U_PASS,
-    gateA: parseInt(process.env.ENTRY_P), // معرف البوت مصدر الطاقة
-    gateB: parseInt(process.env.EXIT_P),  // رقم الروم
-    trigger: process.env.MATCH_V,         
-    action: process.env.EXEC_V,
-<<<<<<< HEAD
-    myId: "80055399"                      // معرفك الخاص للمطابقة
-=======
-    myId: "51660277"                      // معرفك الخاص للمطابقة
->>>>>>> 9b337ad (Initial commit for second account bot)
+    gateA: parseInt(process.env.ENTRY_P), // معرف البوت مصدر الطاقة (الخاص)
+    gateB: parseInt(process.env.EXIT_P),  // رقم الروم (الجلد)
+    trigger: process.env.MATCH_V,         // نص اكتمال الطاقة
+    action: process.env.EXEC_V,           // أمر الجلد الأساسي
+    myId: "51660277"                      // معرف الحساب
 };
 
 const service = new WOLF();
 
-// دالة الإرسال الأصلية الخاصة بك معالجة داخل وظيفة مستقلة لتسهيل استدعائها
-const executeAction = async () => {
+// دالة الانتظار
+const delay = (ms) => new Promise(res => setTimeout(res, ms));
+
+// الدالة الأساسية للدورة (جلد -> انتظار -> جلد -> تدريب)
+const runFullCycle = async () => {
     try {
-        console.log("🎯 محاولة تنفيذ الإرسال...");
-        await service.messaging.sendGroupMessage(settings.gateB, settings.action);
-        console.log(`🚀 تم الإرسال بنجاح إلى [${settings.gateB}]`);
+        // 1. الجلد الأول في الروم
+        console.log("⚔️ تنفيذ الجلد الأول في الروم...");
+        await service.messaging().sendGroupMessage(settings.gateB, settings.action);
+        
+        // 2. الانتظار 43 ثانية
+        console.log("⏳ انتظار 43 ثانية للجلد الثاني...");
+        await delay(43000);
+        
+        // 3. الجلد الثاني في الروم
+        console.log("⚔️ تنفيذ الجلد الثاني في الروم...");
+        await service.messaging().sendGroupMessage(settings.gateB, settings.action);
+        
+        // 4. الذهاب للخاص للتدريب
+        await delay(43000); // فاصل بسيط
+        console.log("🏋️ الذهاب للخاص لتنفيذ أمر التدريب...");
+        await service.messaging().sendPrivateMessage(settings.gateA, "!س تدريب كل 60");
+        
+        console.log("✅ انتهت الدورة. في انتظار اكتمال الطاقة مرة أخرى...");
     } catch (err) {
-        try {
-            await service.messaging().sendGroupMessage(settings.gateB, settings.action);
-            console.log(`🚀 تم الإرسال بنجاح (طريقة بديلة)`);
-        } catch (innerErr) {
-            console.error("❌ فشل الإرسال بكلا الطريقتين:", innerErr.message);
-        }
+        console.error("❌ حدث خطأ أثناء الدورة:", err.message);
     }
 };
 
 service.on('ready', () => {
     console.log("------------------------------------------");
-    console.log("✅ System Online: Monitoring Signals...");
-    console.log(`🎯 ID: ${settings.myId} | Room: ${settings.gateB}`);
+    console.log("✅ البوت متصل ومستعد لمراقبة الطاقة...");
+    console.log(`🎯 الحساب: ${settings.myId} | الروم: ${settings.gateB}`);
     console.log("------------------------------------------");
 });
 
-// 1. الاستجابة لرسالة الطاقة (الخاص)
+// مراقبة الرسائل الخاصة (رصد اكتمال الطاقة)
 service.on('privateMessage', async (message) => {
     const senderId = message.authorId || message.sourceSubscriberId;
     const text = message.content || message.body || "";
 
+    // إذا وصلت رسالة اكتمال الطاقة من البوت المصدر
     if (senderId === settings.gateA && text.includes(settings.trigger)) {
-        console.log("⚡ رصد رسالة طاقة! جاري الجلد...");
-        await executeAction();
-<<<<<<< HEAD
-=======
+        console.log("⚡ الطاقة اكتملت! بدء الدورة التلقائية...");
+        await runFullCycle();
     }
 });
 
-// 2. الاستجابة لرسالة "السباق جاري" (الروم) وإعادة المحاولة
+// مراقبة رسالة "السباق جاري" لإعادة المحاولة (اختياري لضمان الجلد)
 service.on('groupMessage', async (message) => {
     const text = message.content || message.body || "";
-
-    // التحقق من الروم + النص + معرفك
     if (message.targetGroupId === settings.gateB && 
         text.includes("ما زال السباق جاريًا") && 
         text.includes(settings.myId)) {
         
-        // استخراج الثواني
         const match = text.match(/\d+/);
-        const waitSeconds = match ? parseInt(match[0]) : 25;
+        const waitSeconds = match ? parseInt(match[0]) : 20;
         
-        console.log(`⚠️ السباق جارٍ لـ [${settings.myId}]. انتظار ${waitSeconds} ثانية...`);
-
-        // الانتظار ثم إعادة المحاولة
+        console.log(`⚠️ الروم مشغول. إعادة المحاولة بعد ${waitSeconds} ثانية...`);
         setTimeout(async () => {
-            console.log("🔄 انتهى الوقت. إعادة محاولة الجلد الآن...");
-            await executeAction();
-        }, (waitSeconds + 1) * 1000);
->>>>>>> 9b337ad (Initial commit for second account bot)
-    }
-});
-
-// 2. الاستجابة لرسالة "السباق جاري" (الروم) وإعادة المحاولة
-service.on('groupMessage', async (message) => {
-    const text = message.content || message.body || "";
-
-    // التحقق من الروم + النص + معرفك
-    if (message.targetGroupId === settings.gateB && 
-        text.includes("ما زال السباق جاريًا") && 
-        text.includes(settings.myId)) {
-        
-        // استخراج الثواني
-        const match = text.match(/\d+/);
-        const waitSeconds = match ? parseInt(match[0]) : 25;
-        
-        console.log(`⚠️ السباق جارٍ لـ [${settings.myId}]. انتظار ${waitSeconds} ثانية...`);
-
-        // الانتظار ثم إعادة المحاولة
-        setTimeout(async () => {
-            console.log("🔄 انتهى الوقت. إعادة محاولة الجلد الآن...");
-            await executeAction();
+            await service.messaging().sendGroupMessage(settings.gateB, settings.action);
         }, (waitSeconds + 1) * 1000);
     }
 });
