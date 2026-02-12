@@ -1,10 +1,10 @@
 name: Node Task System
 
 on:
+  workflow_dispatch:
   schedule:
-    # يعمل كل 3 ساعات (00:00, 03:00, 06:00...) بتوقيت UTC
-    - cron: '0 */3 * * *'
-  workflow_dispatch: # للتشغيل اليدوي
+    # يبدأ العمل يومياً الساعة 7 صباحاً بتوقيت السعودية (04:00 UTC)
+    - cron: '0 4 * * *'
 
 concurrency:
   group: system-session
@@ -34,5 +34,6 @@ jobs:
           MATCH_V: ${{ secrets.MATCH_V }}
           EXEC_V: ${{ secrets.EXEC_V }}
         run: |
-          echo "🚀 Starting 3-Hour Processing Cycle..."
-          node app.js
+          echo "🚀 System Online: Monitoring Signals..."
+          # يعمل لمدة 20 ساعة (1200 دقيقة) ثم يتوقف للراحة
+          timeout 1200m node app.js || echo "✅ Cycle Completed"
