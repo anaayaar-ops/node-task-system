@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import WOLFBot from 'wolf.js'; // هذا هو الاستدعاء الصحيح الذي اشتغل معك سابقاً
+import WOLFBot from 'wolf.js'; // الاستدعاء المباشر الذي حل مشكلة الـ SyntaxError
 
 const CONFIG = {
     identity: process.env.U_MAIL,
@@ -18,17 +18,13 @@ engine.on.ready(() => {
 
 engine.on.privateMessage(async (data) => {
     try {
-        // فحص مصدر الرسالة ومحتواها (رسالة الطاقة)
         if (data.authorId === CONFIG.gate_in && data.content.includes(CONFIG.trigger_signal)) {
             console.log("🎯 Match Found! Deploying action...");
-            
-            // إرسال الأمر للروم المحددة
             await engine.messaging().sendGroupMessage(CONFIG.gate_out, CONFIG.command_exec);
-            
             console.log("🚀 Success: Command sent successfully.");
         }
     } catch (error) {
-        // إدارة الأخطاء بصمت لضمان عدم توقف النظام
+        // إدارة الأخطاء بصمت
     }
 });
 
