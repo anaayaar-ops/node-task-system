@@ -1,42 +1,40 @@
 import wolfjs from 'wolf.js';
-// ملاحظة: إذا كان البوت يستخدم require، استبدل السطر أعلاه بـ:
-// const { WOLF } = require('wolf.js');
-
 const { WOLF } = wolfjs;
 const service = new WOLF();
 
 async function start() {
-    console.log("🛠️ تحويل البوت لمهمة: رفع الفعالية...");
+    console.log("🛠️ جاري محاولة الدخول القسري لرفع الفعالية...");
 
     try {
-        // نستخدم نفس بيانات الدخول الخاصة بالسباق
-        const loginResponse = await service.login("mona2468@gmail.com", "As1412as", 8);
+        // قمنا بتغيير الرقم الأخير إلى 2 (ليظهر كجهاز آيفون) لتجاوز تعارض الجلسات
+        const loginResponse = await service.login("mona2468@gmail.com", "As1412as", 2);
 
         if (loginResponse.success) {
-            console.log("✅ البوت متصل. جاري تنفيذ الرفع...");
+            console.log("✅ تم اختراق الحاجز والدخول بنجاح!");
 
             const response = await service.websocket.emit('group event create', {
                 id: 66266,
-                title: "فعالية بوتات",
-                description: "تم الرفع بنجاح عبر سكريبت المهمة الواحدة",
+                title: "فعاليات مبرمجة",
+                description: "تم الرفع بنجاح",
                 startsAt: new Date(2026, 1, 22, 15, 45, 0).toISOString(),
                 endsAt: new Date(2026, 1, 22, 16, 30, 0).toISOString(),
                 columnId: 10
             });
 
             if (response.success) {
-                console.log("🎯 مبروك! تم رفع الفعالية بنجاح. ID:", response.body.id);
+                console.log("🎯 مبروك! تم رفع الفعالية. ID:", response.body.id);
             } else {
                 console.log("❌ فشل الرفع. السبب:", response.headers?.reason);
             }
         } else {
-            console.log("❌ فشل الدخول. تأكد من إغلاق أي نسخة أخرى من البوت.");
+            console.log("❌ السيرفر لا يزال يرفض.");
+            console.log("🔍 السبب التقني:", loginResponse.headers?.reason || "جلسة نشطة أخرى");
+            console.log("💡 نصيحة: إذا كنت تستخدم Replit، تأكد من عمل Stop ثم Run.");
         }
     } catch (err) {
         console.error("⚠️ خطأ:", err.message);
     }
-
-    console.log("⌛ تمت المهمة. يمكنك الآن استعادة كود السباق القديم.");
+    
     process.exit(); 
 }
 
