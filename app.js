@@ -1,41 +1,75 @@
+import 'dotenv/config';
 import wolfjs from 'wolf.js';
+
 const { WOLF } = wolfjs;
+
+const settings = {
+    identity: process.env.U_MAIL,
+    secret: process.env.U_PASS,
+    gateA: parseInt(process.env.ENTRY_P), // معرف البوت مصدر الطاقة
+    gateB: parseInt(process.env.EXIT_P),  // رقم الروم
+    trigger: process.env.MATCH_V,         
+    action: process.env.EXEC_V,
+    myId: "51660277"                      // معرفك الخاص للمطابقة
+};
+
 const service = new WOLF();
 
-async function start() {
-    console.log("🛠️ جاري محاولة الدخول القسري لرفع الفعالية...");
-
+// دالة الإرسال الأصلية الخاصة بك معالجة داخل وظيفة مستقلة لتسهيل استدعائها
+const executeAction = async () => {
     try {
-        // قمنا بتغيير الرقم الأخير إلى 2 (ليظهر كجهاز آيفون) لتجاوز تعارض الجلسات
-        const loginResponse = await service.login("mona2468@gmail.com", "As1412as", 2);
-
-        if (loginResponse.success) {
-            console.log("✅ تم اختراق الحاجز والدخول بنجاح!");
-
-            const response = await service.websocket.emit('group event create', {
-                id: 66266,
-                title: "فعاليات مبرمجة",
-                description: "تم الرفع بنجاح",
-                startsAt: new Date(2026, 1, 22, 15, 45, 0).toISOString(),
-                endsAt: new Date(2026, 1, 22, 16, 30, 0).toISOString(),
-                columnId: 10
-            });
-
-            if (response.success) {
-                console.log("🎯 مبروك! تم رفع الفعالية. ID:", response.body.id);
-            } else {
-                console.log("❌ فشل الرفع. السبب:", response.headers?.reason);
-            }
-        } else {
-            console.log("❌ السيرفر لا يزال يرفض.");
-            console.log("🔍 السبب التقني:", loginResponse.headers?.reason || "جلسة نشطة أخرى");
-            console.log("💡 نصيحة: إذا كنت تستخدم Replit، تأكد من عمل Stop ثم Run.");
-        }
+        console.log("🎯 محاولة تنفيذ الإرسال...");
+        await service.messaging.sendGroupMessage(settings.gateB, settings.action);
+        console.log(`🚀 تم الإرسال بنجاح إلى [${settings.gateB}]`);
     } catch (err) {
-        console.error("⚠️ خطأ:", err.message);
+        try {
+            await service.messaging().sendGroupMessage(settings.gateB, settings.action);
+            console.log(`🚀 تم الإرسال بنجاح (طريقة بديلة)`);
+        } catch (innerErr) {
+            console.error("❌ فشل الإرسال بكلا الطريقتين:", innerErr.message);
+        }
     }
-    
-    process.exit(); 
-}
+};
 
-start();
+service.on('ready', () => {
+    console.log("------------------------------------------");
+    console.log("✅ System Online: Monitoring Signals...");
+    console.log(`🎯 ID: ${settings.myId} | Room: ${settings.gateB}`);
+    console.log("------------------------------------------");
+});
+
+// 1. الاستجابة لرسالة الطاقة (الخاص)
+service.on('privateMessage', async (message) => {
+    const senderId = message.authorId || message.sourceSubscriberId;
+    const text = message.content || message.body || "";
+
+    if (senderId === settings.gateA && text.includes(settings.trigger)) {
+        console.log("⚡ رصد رسالة طاقة! جاري الجلد...");
+        await executeAction();
+    }
+});
+
+// 2. الاستجابة لرسالة "السباق جاري" (الروم) وإعادة المحاولة
+service.on('groupMessage', async (message) => {
+    const text = message.content || message.body || "";
+
+    // التحقق من الروم + النص + معرفك
+    if (message.targetGroupId === settings.gateB && 
+        text.includes("ما زال السباق جاريًا") && 
+        text.includes(settings.myId)) {
+        
+        // استخراج الثواني
+        const match = text.match(/\d+/);
+        const waitSeconds = match ? parseInt(match[0]) : 25;
+        
+        console.log(`⚠️ السباق جارٍ لـ [${settings.myId}]. انتظار ${waitSeconds} ثانية...`);
+
+        // الانتظار ثم إعادة المحاولة
+        setTimeout(async () => {
+            console.log("🔄 انتهى الوقت. إعادة محاولة الجلد الآن...");
+            await executeAction();
+        }, (waitSeconds + 1) * 1000);
+    }
+});
+
+service.login(settings.identity, settings.secret);
