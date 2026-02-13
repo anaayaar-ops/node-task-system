@@ -11,7 +11,7 @@ const settings = {
     gateB: parseInt(process.env.EXIT_P),  // رقم الروم (للمراقبة والإرسال)
     trigger: process.env.MATCH_V,         // الكلمة المفتاحية للطاقة
     action: process.env.EXEC_V,          // الرسالة التي سيجلد بها البوت
-    myId: "51660277"                      // معرفك الخاص للمطابقة
+    myId: "80055399"                      // معرفك الخاص للمطابقة
 };
 
 const service = new WOLF();
