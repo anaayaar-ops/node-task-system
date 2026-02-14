@@ -31,18 +31,18 @@ const executeAction = async () => {
     }
 };
 
-service.on('ready', () => {
+service.on('ready', async () => {
     console.log("------------------------------------------");
-    console.log("✅ System Online: Monitoring Signals...");
-    console.log(`🎯 ID: ${settings.myId} | Room: ${settings.gateB}`);
+    console.log(`✅ تم تسجيل الدخول: ${service.currentSubscriber.nickname}`);
     console.log("------------------------------------------");
-        try {
+
+    try {
+        // إضافة كلمة async قبل () جعلت استخدام await ممكناً هنا
         await service.messaging.sendPrivateMessage(settings.gateA, "!س تدريب كل 1");
-        console.log("✉️ تم إرسال أمر التدريب التلقائي إلى الخاص.");
+        console.log("✉️ تم إرسال أمر التدريب التلقائي بنجاح.");
     } catch (err) {
         console.error("❌ فشل إرسال أمر التدريب:", err.message);
     }
-
 });
 
 // 1. الاستجابة لرسالة الطاقة (الخاص)
