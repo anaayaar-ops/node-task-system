@@ -14,6 +14,7 @@ const settings = {
 const service = new WOLF();
 
 service.on('ready', () => {
+    await service.user().setStatus(wolfjs.Status.BUSY); 
     console.log("------------------------------------------");
     console.log(`✅ تم تسجيل الدخول: ${service.currentSubscriber.nickname}`);
     console.log(`👀 يراقب الآن الروم: ${settings.groupId}`);
