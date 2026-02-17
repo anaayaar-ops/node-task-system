@@ -13,21 +13,29 @@ const settings = {
 
 const service = new WOLF();
 
-service.on('ready', async () => {
-    // محاولة تغيير الحالة بأمر مباشر للسيرفر (بدون الحاجة لدوال معقدة)
-    try {
-        await service.utility().updateSubscriber({ status: 2 }); 
-        console.log("🔴 تم تثبيت الحالة: مشغول");
-    } catch (e) {
-        // إذا لم تنجح، نحاول الطريقة المختصرة
-        service.currentSubscriber.status = 2;
-        console.log("⚠️ تم تحديث الحالة داخلياً");
+service.on('ready', () => {
+    console.log("--- 🔍 استكشاف الدوال المتاحة في المكتبة ---");
+
+    // 1. عرض جميع خصائص ودوال كائن الخدمة الرئيسي
+    console.log("Main Service Keys:", Object.keys(service));
+
+    // 2. عرض دوال المستخدم/المشترك (المكان المحتمل لتغيير الحالة)
+    if (service.subscriber) {
+        console.log("Subscriber Methods:", Object.getOwnPropertyNames(Object.getPrototypeOf(service.subscriber())));
+    }
+    
+    if (service.currentSubscriber) {
+        console.log("CurrentSubscriber Keys:", Object.keys(service.currentSubscriber));
     }
 
-    console.log("------------------------------------------");
-    console.log(`✅ البوت يعمل الآن باسم: ${service.currentSubscriber.nickname}`);
-    console.log("------------------------------------------");
+    // 3. عرض دوال الـ Utility (تستخدم غالباً في الإصدارات الحديثة للتحديثات)
+    if (service.utility) {
+        console.log("Utility Methods:", Object.getOwnPropertyNames(Object.getPrototypeOf(service.utility())));
+    }
+
+    console.log("--- ✅ انتهى الاستكشاف ---");
 });
+
 service.on('groupMessage', async (message) => {
     const text = (message.content || message.body || "").trim();
 
