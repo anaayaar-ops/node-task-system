@@ -6,36 +6,44 @@ const { WOLF } = wolfjs;
 const settings = {
     identity: process.env.U_MAIL,
     secret: process.env.U_PASS,
-    groupId: parseInt(process.env.EXIT_P), // الروم المراد مراقبته
-    targetTrigger: "!س جلد خاص 51660277",   // النص المراد رصده
-    actionResponse: "!س جلد"                // الرد الذي سيرسله البوت
+    groupId: parseInt(process.env.EXIT_P), 
+    targetTrigger: "!س جلد خاص 51660277",   
+    actionResponse: "!س جلد"                
 };
 
 const service = new WOLF();
 
 service.on('ready', () => {
     console.log("------------------------------------------");
-    console.log(`✅ البوت جاهز ويعمل بحساب: ${service.currentSubscriber.nickname}`);
-    console.log(`👀 يراقب الآن: ${settings.groupId}`);
+    console.log(`✅ تم تسجيل الدخول باسم: ${service.currentSubscriber.nickname}`);
+    console.log(`👀 مراقبة الروم: ${settings.groupId}`);
     console.log("------------------------------------------");
 });
 
-// مراقبة رسائل المجموعات
 service.on('groupMessage', async (message) => {
     const text = message.content || message.body || "";
 
-    // التحقق من رقم الروم ومحتوى الرسالة
+    // التأكد من أن الرسالة من الروم المطلوب وتطابق النص
     if (message.targetGroupId === settings.groupId && text.trim() === settings.targetTrigger) {
         
-        console.log(`🎯 تم رصد الأمر في الروم [${message.targetGroupId}]`);
-        
-        try {
-            await service.messaging().sendGroupMessage(settings.groupId, settings.actionResponse);
-            console.log(`🚀 تم إرسال: ${settings.actionResponse}`);
-        } catch (err) {
-            console.error("❌ فشل إرسال الرد:", err.message);
-        }
+        console.log("🎯 رصدت الأمر! جاري الإرسال...");
+
+        // تأخير بسيط 500 ملي ثانية لتجنب إلغاء العملية من السيرفر
+        setTimeout(async () => {
+            try {
+                // لاحظ الأقواس بعد messaging
+                await service.messaging().sendGroupMessage(settings.groupId, settings.actionResponse);
+                console.log(`🚀 تم الجلد بنجاح في [${settings.groupId}]`);
+            } catch (err) {
+                console.error("❌ خطأ أثناء الإرسال:", err.message);
+            }
+        }, 500); 
     }
+});
+
+// معالجة أخطاء النظام العامة لمنع توقف البوت
+service.on('error', (err) => {
+    console.error("⚠️ خطأ في الاتصال:", err.message);
 });
 
 service.login(settings.identity, settings.secret);
