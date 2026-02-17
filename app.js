@@ -15,47 +15,46 @@ const service = new WOLF();
 
 service.on('ready', async () => {
     console.log("==========================================");
-    console.log(`✅ البوت متصل باسم: ${service.currentSubscriber.nickname}`);
+    console.log(`✅ البوت متصل الآن: ${service.currentSubscriber.nickname}`);
 
     try {
-        // تحديث الحالة للأيقونة الحمراء (onlineState) ومسح النص (status)
+        // هذه هي الطريقة الخام (Raw) الوحيدة التي سيفهمها السيرفر في إصدارك
+        // لتغيير لون النقطة إلى الأحمر (Busy)
         await service.websocket.emit('subscriber profile update', {
-            onlineState: 2, // اللون الأحمر
-            status: ""      // مسح رقم 2 من النص
+            onlineState: 2 // 2 هو كود اللون الأحمر في وولف
         });
-        console.log("🔴 الحالة: مشغول (أيقونة حمراء)");
+        
+        // مسح أي نص قديم كتبناه بالخطأ في نص الحالة
+        await service.websocket.emit('subscriber profile update', {
+            status: "" 
+        });
+
+        console.log("🔴 تم تحويل الحالة إلى مشغول (نقطة حمراء)");
     } catch (e) {
-        console.log("⚠️ فشل تحديث الحالة، لكن العمل مستمر.");
+        console.log("❌ خطأ في السيرفر عند تغيير الحالة.");
     }
     console.log("==========================================");
 });
 
-// الاعتماد على حدث 'message' كما ظهر في الفحص
+// استخدمنا 'message' لأن الفحص أظهر أنه الحدث الوحيد المتاح للاستلام
 service.on('message', async (message) => {
-    // التحقق من أن الرسالة من المجموعة المطلوبة
+    // التحقق من الروم
     const targetId = message.targetGroupId || message.recipientId;
-    const isGroup = message.isGroup || !!message.targetGroupId;
-
-    if (isGroup && targetId === settings.groupId) {
+    
+    if (targetId === settings.groupId) {
         const text = (message.content || message.body || "").trim();
-        
-        // طباعة الرسائل في الكونسول للتأكد من القراءة
-        console.log(`📩 رسالة مستلمة: [${text}]`);
 
+        // فحص المطابقة للجلد
         if (text === settings.targetTrigger) {
-            console.log("🎯 تم رصد الهدف! جاري الرد...");
             try {
-                // الوصول للدالة كما ظهرت في الفحص: sendGroupMessage
-                const msgService = typeof service.messaging === 'function' ? service.messaging() : service.messaging;
-                await msgService.sendGroupMessage(settings.groupId, settings.actionResponse);
+                // استخدام sendGroupMessage كما ظهرت في الفحص
+                await service.messaging.sendGroupMessage(settings.groupId, settings.actionResponse);
                 console.log("🚀 تم الجلد بنجاح!");
             } catch (err) {
-                console.error("❌ فشل الإرسال برمجياً:", err.message);
+                console.error("❌ فشل الإرسال:", err.message);
             }
         }
     }
 });
-
-service.on('error', (err) => console.error("⚠️ خطأ اتصالي:", err.message));
 
 service.login(settings.identity, settings.secret);
