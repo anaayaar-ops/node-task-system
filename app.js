@@ -13,48 +13,41 @@ const settings = {
 
 const service = new WOLF();
 
-service.on('ready', async () => {
+// عند الجاهزية: لن نقوم بتغيير الحالة نهائياً
+service.on('ready', () => {
     console.log("==========================================");
-    console.log(`✅ البوت متصل الآن: ${service.currentSubscriber.nickname}`);
-
-    try {
-        // هذه هي الطريقة الخام (Raw) الوحيدة التي سيفهمها السيرفر في إصدارك
-        // لتغيير لون النقطة إلى الأحمر (Busy)
-        await service.websocket.emit('subscriber profile update', {
-            onlineState: 2 // 2 هو كود اللون الأحمر في وولف
-        });
-        
-        // مسح أي نص قديم كتبناه بالخطأ في نص الحالة
-        await service.websocket.emit('subscriber profile update', {
-            status: "" 
-        });
-
-        console.log("🔴 تم تحويل الحالة إلى مشغول (نقطة حمراء)");
-    } catch (e) {
-        console.log("❌ خطأ في السيرفر عند تغيير الحالة.");
-    }
+    console.log(`✅ البوت يعمل الآن باسم: ${service.currentSubscriber.nickname}`);
+    console.log(`👀 يراقب الروم: ${settings.groupId}`);
+    console.log(`🛠️ الحالة: التحكم يدوي (لن يلمس البوت حالتك)`);
     console.log("==========================================");
 });
 
-// استخدمنا 'message' لأن الفحص أظهر أنه الحدث الوحيد المتاح للاستلام
+// مراقبة الرسائل والرد
 service.on('message', async (message) => {
-    // التحقق من الروم
+    // تحديد معرف الروم (سواء كان targetGroupId أو recipientId)
     const targetId = message.targetGroupId || message.recipientId;
-    
+
+    // التأكد من أن الرسالة من الروم المطلوب
     if (targetId === settings.groupId) {
         const text = (message.content || message.body || "").trim();
 
-        // فحص المطابقة للجلد
+        // إذا تطابق النص مع الأمر (الزناد)
         if (text === settings.targetTrigger) {
+            console.log(`🎯 تم رصد الهدف: [${text}]`);
             try {
-                // استخدام sendGroupMessage كما ظهرت في الفحص
+                // بناءً على فحصك: messaging كائن يحتوي على sendGroupMessage مباشرة
                 await service.messaging.sendGroupMessage(settings.groupId, settings.actionResponse);
-                console.log("🚀 تم الجلد بنجاح!");
+                console.log(`🚀 تم الإرسال بنجاح: ${settings.actionResponse}`);
             } catch (err) {
                 console.error("❌ فشل الإرسال:", err.message);
             }
         }
     }
+});
+
+// معالجة الأخطاء لضمان عدم توقف البوت
+service.on('error', (err) => {
+    console.error("⚠️ خطأ في الاتصال:", err.message);
 });
 
 service.login(settings.identity, settings.secret);
