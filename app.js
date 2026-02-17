@@ -13,12 +13,18 @@ const settings = {
 
 const service = new WOLF();
 
-service.on('ready', () => {
-    await service.user().setStatus(wolfjs.Status.BUSY); 
-    console.log("------------------------------------------");
-    console.log(`✅ تم تسجيل الدخول: ${service.currentSubscriber.nickname}`);
-    console.log(`👀 يراقب الآن الروم: ${settings.groupId}`);
-    console.log("------------------------------------------");
+service.on('ready', async () => {
+    try {
+        // الآن سيعمل await بدون مشاكل
+        await service.user().setStatus(wolfjs.Status.BUSY); 
+        
+        console.log("------------------------------------------");
+        console.log(`✅ تم تسجيل الدخول باسم: ${service.currentSubscriber.nickname}`);
+        console.log(`🔴 الحالة الآن: مشغول (Busy)`);
+        console.log("------------------------------------------");
+    } catch (err) {
+        console.error("❌ فشل تغيير الحالة:", err.message);
+    } 
 });
 
 service.on('groupMessage', async (message) => {
