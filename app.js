@@ -2,38 +2,60 @@ import 'dotenv/config';
 import wolfjs from 'wolf.js';
 
 const { WOLF } = wolfjs;
+
+const settings = {
+    identity: process.env.U_MAIL,
+    secret: process.env.U_PASS,
+    groupId: parseInt(process.env.EXIT_P), 
+    targetTrigger: process.env.MATCH_V, 
+    actionResponse: process.env.EXEC_V  
+};
+
 const service = new WOLF();
 
-service.on('ready', () => {
+service.on('ready', async () => {
     console.log("==========================================");
-    console.log("🔎 بدء الفحص العميق للمكتبة (Deep Inspection)");
-    console.log("==========================================");
+    console.log(`✅ البوت متصل باسم: ${service.currentSubscriber.nickname}`);
 
-    // 1. فحص كائن المراسلة (المسؤول عن الإرسال)
-    if (service.messaging) {
-        const messagingProto = Object.getPrototypeOf(typeof service.messaging === 'function' ? service.messaging() : service.messaging);
-        console.log("📩 Messaging Functions:", Object.getOwnPropertyNames(messagingProto).filter(p => typeof messagingProto[p] === 'function'));
+    try {
+        // تحديث الحالة للأيقونة الحمراء (onlineState) ومسح النص (status)
+        await service.websocket.emit('subscriber profile update', {
+            onlineState: 2, // اللون الأحمر
+            status: ""      // مسح رقم 2 من النص
+        });
+        console.log("🔴 الحالة: مشغول (أيقونة حمراء)");
+    } catch (e) {
+        console.log("⚠️ فشل تحديث الحالة، لكن العمل مستمر.");
     }
-
-    // 2. فحص كائن البروتوكول (المسؤول عن استلام الرسائل)
-    console.log("📡 Websocket Events:", Object.keys(service._events));
-
-    // 3. فحص كائن الملف الشخصي (المسؤول عن الحالة)
-    if (service.currentSubscriber) {
-        console.log("👤 CurrentSubscriber Properties:", Object.keys(service.currentSubscriber));
-        const subProto = Object.getPrototypeOf(service.currentSubscriber);
-        console.log("👤 CurrentSubscriber Methods:", Object.getOwnPropertyNames(subProto).filter(p => typeof subProto[p] === 'function'));
-    }
-
-    // 4. فحص كائن الـ Utility (الوظائف المساعدة)
-    if (service.utility) {
-        const utilProto = Object.getPrototypeOf(service.utility);
-        console.log("🛠️ Utility Functions:", Object.getOwnPropertyNames(utilProto).filter(p => typeof utilProto[p] === 'function'));
-    }
-
-    console.log("==========================================");
-    console.log("✅ انتهى الفحص. يرجى نسخ المخرجات أعلاه.");
     console.log("==========================================");
 });
 
-service.login(process.env.U_MAIL, process.env.U_PASS);
+// الاعتماد على حدث 'message' كما ظهر في الفحص
+service.on('message', async (message) => {
+    // التحقق من أن الرسالة من المجموعة المطلوبة
+    const targetId = message.targetGroupId || message.recipientId;
+    const isGroup = message.isGroup || !!message.targetGroupId;
+
+    if (isGroup && targetId === settings.groupId) {
+        const text = (message.content || message.body || "").trim();
+        
+        // طباعة الرسائل في الكونسول للتأكد من القراءة
+        console.log(`📩 رسالة مستلمة: [${text}]`);
+
+        if (text === settings.targetTrigger) {
+            console.log("🎯 تم رصد الهدف! جاري الرد...");
+            try {
+                // الوصول للدالة كما ظهرت في الفحص: sendGroupMessage
+                const msgService = typeof service.messaging === 'function' ? service.messaging() : service.messaging;
+                await msgService.sendGroupMessage(settings.groupId, settings.actionResponse);
+                console.log("🚀 تم الجلد بنجاح!");
+            } catch (err) {
+                console.error("❌ فشل الإرسال برمجياً:", err.message);
+            }
+        }
+    }
+});
+
+service.on('error', (err) => console.error("⚠️ خطأ اتصالي:", err.message));
+
+service.login(settings.identity, settings.secret);
