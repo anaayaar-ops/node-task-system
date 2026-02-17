@@ -7,8 +7,8 @@ const settings = {
     identity: process.env.U_MAIL,
     secret: process.env.U_PASS,
     groupId: parseInt(process.env.EXIT_P), 
-    targetTrigger: "!س جلد خاص 51660277 80055399",   
-    actionResponse: "!س جلد"                
+    targetTrigger: process.env.MATCH_V, 
+    actionResponse: process.env.EXEC_V  
 };
 
 const service = new WOLF();
@@ -18,53 +18,31 @@ service.on('ready', async () => {
     console.log(`✅ تم تسجيل الدخول: ${service.currentSubscriber.nickname}`);
 
     try {
-        // الطريقة الوحيدة المتبقية وهي إرسال "طلب خام" للسيرفر لتغيير الحالة
-        // 2 تعني مشغول، 5 تعني مخفي
+        // التصحيح النهائي: تغيير onlineState هو ما يجعل الأيقونة حمراء
+        // الرقم 2 في onlineState يعني "مشغول" (اللون الأحمر)
         await service.websocket.emit('subscriber profile update', {
-            status: 2
+            onlineState: 2 
         });
-        console.log("🔴 تم إرسال طلب الحالة: مشغول (Busy)");
+        console.log("🔴 تم تغيير أيقونة الحالة إلى اللون الأحمر (مشغول)");
     } catch (err) {
-        // محاولة بديلة عبر خاصية التواجد
-        try {
-            await service.websocket.emit('presence update', {
-                status: 2
-            });
-            console.log("🔴 تم تحديث الحالة عبر Presence");
-        } catch (e) {
-            console.log("⚠️ السيرفر لم يستجب لطلب تغيير الحالة، سيستمر البوت في العمل.");
-        }
+        console.log("⚠️ فشل تغيير اللون، سيستمر البوت في الجلد.");
     }
-
+    
     console.log(`👀 يراقب الروم: ${settings.groupId}`);
     console.log("------------------------------------------");
 });
-
 
 service.on('groupMessage', async (message) => {
     const text = (message.content || message.body || "").trim();
 
     if (message.targetGroupId === settings.groupId && text === settings.targetTrigger) {
-        
-        console.log(`🎯 تم رصد الهدف! جاري محاولة الإرسال...`);
-        
+        console.log(`🎯 تم رصد الهدف!`);
         try {
-            // محاولة الطريقة الأولى (كـ دالة)
-            if (typeof service.messaging === 'function') {
-                await service.messaging().sendGroupMessage(settings.groupId, settings.actionResponse);
-            } 
-            // محاولة الطريقة الثانية (كـ خاصية)
-            else if (service.messaging && typeof service.messaging.sendGroupMessage === 'function') {
-                await service.messaging.sendGroupMessage(settings.groupId, settings.actionResponse);
-            }
-            // محاولة الطريقة الثالثة (في الإصدارات القديمة جداً)
-            else if (service.messages && typeof service.messages.sendGroupMessage === 'function') {
-                await service.messages.sendGroupMessage(settings.groupId, settings.actionResponse);
-            }
-            
-            console.log(`🚀 تم الإرسال بنجاح!`);
+            const messaging = typeof service.messaging === 'function' ? service.messaging() : service.messaging;
+            await messaging.sendGroupMessage(settings.groupId, settings.actionResponse);
+            console.log(`🚀 تم الجلد بنجاح!`);
         } catch (err) {
-            console.error("❌ فشل الإرسال النهائي:", err.message);
+            console.error("❌ فشل الإرسال:", err.message);
         }
     }
 });
