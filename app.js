@@ -17,12 +17,14 @@ const service = new WOLF({
         onlineState: 2 // نطلب من المكتبة الدخول مباشرة بحالة "مشغول" 
     }
 
-service.on('ready', () => {
-    console.log("------------------------------------------");
-    console.log(`✅ تم تسجيل الدخول: ${service.currentSubscriber.nickname}`);
-    console.log(`👀 يراقب الآن الروم: ${settings.groupId}`);
-    console.log("------------------------------------------");
+    service.on('ready', () => {
+    console.log("==========================================");
+    console.log(`✅ البوت متصل الآن باسم: ${service.currentSubscriber.nickname}`);
+    console.log(`🛠️ تم طلب الدخول بحالة 'مشغول' تلقائياً.`);
+    console.log("==========================================");
 });
+
+
 
 service.on('groupMessage', async (message) => {
     const text = (message.content || message.body || "").trim();
