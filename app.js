@@ -7,7 +7,7 @@ const settings = {
     identity: process.env.U_MAIL,
     secret: process.env.U_PASS,
     groupId: parseInt(process.env.EXIT_P), 
-    targetTrigger: "!س جلد خاص 51660277",   
+    targetTrigger: "!س جلد خاص 51660277 80055399",   
     actionResponse: "!س جلد"                
 };
 
