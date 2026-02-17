@@ -13,32 +13,31 @@ const settings = {
 
 const service = new WOLF();
 
-service.on('ready', () => {
-    console.log("--- 🔍 محاولة الوصول للدوال الصحيحة ---");
+service.on('ready', async () => {
+    console.log("------------------------------------------");
+    console.log(`✅ تم تسجيل الدخول: ${service.currentSubscriber.nickname}`);
 
     try {
-        // 1. استكشاف كائن المشترك (Subscriber)
-        if (service.subscriber) {
-            console.log("Subscriber Keys:", Object.keys(service.subscriber));
-            // عرض الدوال المخفية داخل البروتوتايب
-            console.log("Subscriber Methods:", Object.getOwnPropertyNames(Object.getPrototypeOf(service.subscriber)));
+        // الطريقة الوحيدة المتبقية وهي إرسال "طلب خام" للسيرفر لتغيير الحالة
+        // 2 تعني مشغول، 5 تعني مخفي
+        await service.websocket.emit('subscriber profile update', {
+            status: 2
+        });
+        console.log("🔴 تم إرسال طلب الحالة: مشغول (Busy)");
+    } catch (err) {
+        // محاولة بديلة عبر خاصية التواجد
+        try {
+            await service.websocket.emit('presence update', {
+                status: 2
+            });
+            console.log("🔴 تم تحديث الحالة عبر Presence");
+        } catch (e) {
+            console.log("⚠️ السيرفر لم يستجب لطلب تغيير الحالة، سيستمر البوت في العمل.");
         }
-
-        // 2. استكشاف كائن الأدوات (Utility)
-        if (service.utility) {
-            console.log("Utility Keys:", Object.keys(service.utility));
-            console.log("Utility Methods:", Object.getOwnPropertyNames(Object.getPrototypeOf(service.utility)));
-        }
-        
-        // 3. استكشاف العضو الحالي (Current Subscriber)
-        if (service.currentSubscriber) {
-            console.log("CurrentSubscriber Keys:", Object.keys(service.currentSubscriber));
-        }
-
-    } catch (e) {
-        console.log("❌ خطأ أثناء الاستكشاف:", e.message);
     }
-    console.log("--- ✅ انتهى الاستكشاف ---");
+
+    console.log(`👀 يراقب الروم: ${settings.groupId}`);
+    console.log("------------------------------------------");
 });
 
 
