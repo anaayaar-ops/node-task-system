@@ -15,7 +15,7 @@ const settings = {
 const service = new WOLF({
     presence: {
         onlineState: 2 // نطلب من المكتبة الدخول مباشرة بحالة "مشغول" 
-    }
+    }}) ;
 
     service.on('ready', () => {
     console.log("==========================================");
