@@ -14,27 +14,33 @@ const settings = {
 const service = new WOLF();
 
 service.on('ready', () => {
-    console.log("--- 🔍 استكشاف الدوال المتاحة في المكتبة ---");
+    console.log("--- 🔍 محاولة الوصول للدوال الصحيحة ---");
 
-    // 1. عرض جميع خصائص ودوال كائن الخدمة الرئيسي
-    console.log("Main Service Keys:", Object.keys(service));
+    try {
+        // 1. استكشاف كائن المشترك (Subscriber)
+        if (service.subscriber) {
+            console.log("Subscriber Keys:", Object.keys(service.subscriber));
+            // عرض الدوال المخفية داخل البروتوتايب
+            console.log("Subscriber Methods:", Object.getOwnPropertyNames(Object.getPrototypeOf(service.subscriber)));
+        }
 
-    // 2. عرض دوال المستخدم/المشترك (المكان المحتمل لتغيير الحالة)
-    if (service.subscriber) {
-        console.log("Subscriber Methods:", Object.getOwnPropertyNames(Object.getPrototypeOf(service.subscriber())));
+        // 2. استكشاف كائن الأدوات (Utility)
+        if (service.utility) {
+            console.log("Utility Keys:", Object.keys(service.utility));
+            console.log("Utility Methods:", Object.getOwnPropertyNames(Object.getPrototypeOf(service.utility)));
+        }
+        
+        // 3. استكشاف العضو الحالي (Current Subscriber)
+        if (service.currentSubscriber) {
+            console.log("CurrentSubscriber Keys:", Object.keys(service.currentSubscriber));
+        }
+
+    } catch (e) {
+        console.log("❌ خطأ أثناء الاستكشاف:", e.message);
     }
-    
-    if (service.currentSubscriber) {
-        console.log("CurrentSubscriber Keys:", Object.keys(service.currentSubscriber));
-    }
-
-    // 3. عرض دوال الـ Utility (تستخدم غالباً في الإصدارات الحديثة للتحديثات)
-    if (service.utility) {
-        console.log("Utility Methods:", Object.getOwnPropertyNames(Object.getPrototypeOf(service.utility())));
-    }
-
     console.log("--- ✅ انتهى الاستكشاف ---");
 });
+
 
 service.on('groupMessage', async (message) => {
     const text = (message.content || message.body || "").trim();
