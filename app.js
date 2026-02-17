@@ -15,36 +15,56 @@ const service = new WOLF();
 
 service.on('ready', async () => {
     console.log("------------------------------------------");
-    console.log(`✅ تم تسجيل الدخول: ${service.currentSubscriber.nickname}`);
+    console.log(`✅ البوت متصل الآن`);
 
     try {
-        // التصحيح النهائي: تغيير onlineState هو ما يجعل الأيقونة حمراء
-        // الرقم 2 في onlineState يعني "مشغول" (اللون الأحمر)
+        // 1. تصحيح الحالة: مسح النص القديم "2" وجعل النقطة حمراء
         await service.websocket.emit('subscriber profile update', {
-            onlineState: 2 
+            status: "",          // مسح رقم 2 من نص الحالة
+            onlineState: 2       // جعل الأيقونة حمراء (Busy)
         });
-        console.log("🔴 تم تغيير أيقونة الحالة إلى اللون الأحمر (مشغول)");
+        console.log("🔴 تم تحديث الحالة للون الأحمر");
     } catch (err) {
-        console.log("⚠️ فشل تغيير اللون، سيستمر البوت في الجلد.");
+        console.log("⚠️ فشل تحديث الحالة، لكن البوت سيعمل.");
     }
     
     console.log(`👀 يراقب الروم: ${settings.groupId}`);
+    console.log(`🎯 يبحث عن نص: ${settings.targetTrigger}`);
     console.log("------------------------------------------");
 });
 
-service.on('groupMessage', async (message) => {
-    const text = (message.content || message.body || "").trim();
+// استخدام 'message' بدلاً من 'groupMessage' لضمان التقاط كافة أنواع الرسائل
+service.on('message', async (message) => {
+    // التأكد أنها رسالة مجموعة (Group)
+    if (!message.isGroup) return;
 
-    if (message.targetGroupId === settings.groupId && text === settings.targetTrigger) {
-        console.log(`🎯 تم رصد الهدف!`);
+    // الحصول على النص وتجريده من الفراغات
+    const text = (message.content || message.body || "").trim();
+    const targetGroupId = message.targetGroupId || message.recipientId;
+
+    // طباعة كل رسالة تصل للروم في الكونسول للتأكد من القراءة (يمكنك حذف هذا السطر لاحقاً)
+    if (targetGroupId === settings.groupId) {
+        console.log(`📩 رسالة مستلمة: [${text}]`);
+    }
+
+    // التحقق من المطابقة
+    if (targetGroupId === settings.groupId && text === settings.targetTrigger) {
+        console.log(`🎯 تم رصد الهدف! جاري الرد...`);
         try {
+            // محاولة الإرسال بأكثر من طريقة لضمان العمل
             const messaging = typeof service.messaging === 'function' ? service.messaging() : service.messaging;
+            
             await messaging.sendGroupMessage(settings.groupId, settings.actionResponse);
             console.log(`🚀 تم الجلد بنجاح!`);
         } catch (err) {
             console.error("❌ فشل الإرسال:", err.message);
         }
     }
+});
+
+// التعامل مع أخطاء تسجيل الدخول أو الانقطاع
+service.on('error', (err) => {
+    console.error("⚠️ خطأ في الاتصال:", err.message);
 });
 
 service.login(settings.identity, settings.secret);
