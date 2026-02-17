@@ -15,35 +15,33 @@ const service = new WOLF();
 
 service.on('ready', () => {
     console.log("------------------------------------------");
-    console.log(`✅ تم تسجيل الدخول باسم: ${service.currentSubscriber.nickname}`);
-    console.log(`👀 مراقبة الروم: ${settings.groupId}`);
+    console.log(`✅ تم تسجيل الدخول: ${service.currentSubscriber.nickname}`);
+    console.log(`👀 يراقب الآن الروم: ${settings.groupId}`);
     console.log("------------------------------------------");
 });
 
+// مراقبة رسائل المجموعات
 service.on('groupMessage', async (message) => {
-    const text = message.content || message.body || "";
+    const text = (message.content || message.body || "").trim();
 
-    // التأكد من أن الرسالة من الروم المطلوب وتطابق النص
-    if (message.targetGroupId === settings.groupId && text.trim() === settings.targetTrigger) {
+    // التحقق من رقم الروم ومحتوى الرسالة
+    if (message.targetGroupId === settings.groupId && text === settings.targetTrigger) {
         
-        console.log("🎯 رصدت الأمر! جاري الإرسال...");
-
-        // تأخير بسيط 500 ملي ثانية لتجنب إلغاء العملية من السيرفر
-        setTimeout(async () => {
-            try {
-                // لاحظ الأقواس بعد messaging
-                await service.messaging().sendGroupMessage(settings.groupId, settings.actionResponse);
-                console.log(`🚀 تم الجلد بنجاح في [${settings.groupId}]`);
-            } catch (err) {
-                console.error("❌ خطأ أثناء الإرسال:", err.message);
-            }
-        }, 500); 
+        console.log(`🎯 تم رصد الهدف في الروم [${message.targetGroupId}]`);
+        
+        try {
+            // التصحيح هنا: إضافة الأقواس () بعد كلمة messaging
+            await service.messaging().sendGroupMessage(settings.groupId, settings.actionResponse);
+            console.log(`🚀 تم الإرسال بنجاح: ${settings.actionResponse}`);
+        } catch (err) {
+            console.error("❌ فشل الإرسال رغم التصحيح:", err.message);
+        }
     }
 });
 
-// معالجة أخطاء النظام العامة لمنع توقف البوت
+// التعامل مع أخطاء الاتصال المفاجئة
 service.on('error', (err) => {
-    console.error("⚠️ خطأ في الاتصال:", err.message);
+    console.error("⚠️ خطأ في السيرفر:", err.message);
 });
 
 service.login(settings.identity, settings.secret);
