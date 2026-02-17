@@ -20,28 +20,32 @@ service.on('ready', () => {
     console.log("------------------------------------------");
 });
 
-// مراقبة رسائل المجموعات
 service.on('groupMessage', async (message) => {
     const text = (message.content || message.body || "").trim();
 
-    // التحقق من رقم الروم ومحتوى الرسالة
     if (message.targetGroupId === settings.groupId && text === settings.targetTrigger) {
         
-        console.log(`🎯 تم رصد الهدف في الروم [${message.targetGroupId}]`);
+        console.log(`🎯 تم رصد الهدف! جاري محاولة الإرسال...`);
         
         try {
-            // التصحيح هنا: إضافة الأقواس () بعد كلمة messaging
-            await service.messaging().sendGroupMessage(settings.groupId, settings.actionResponse);
-            console.log(`🚀 تم الإرسال بنجاح: ${settings.actionResponse}`);
+            // محاولة الطريقة الأولى (كـ دالة)
+            if (typeof service.messaging === 'function') {
+                await service.messaging().sendGroupMessage(settings.groupId, settings.actionResponse);
+            } 
+            // محاولة الطريقة الثانية (كـ خاصية)
+            else if (service.messaging && typeof service.messaging.sendGroupMessage === 'function') {
+                await service.messaging.sendGroupMessage(settings.groupId, settings.actionResponse);
+            }
+            // محاولة الطريقة الثالثة (في الإصدارات القديمة جداً)
+            else if (service.messages && typeof service.messages.sendGroupMessage === 'function') {
+                await service.messages.sendGroupMessage(settings.groupId, settings.actionResponse);
+            }
+            
+            console.log(`🚀 تم الإرسال بنجاح!`);
         } catch (err) {
-            console.error("❌ فشل الإرسال رغم التصحيح:", err.message);
+            console.error("❌ فشل الإرسال النهائي:", err.message);
         }
     }
-});
-
-// التعامل مع أخطاء الاتصال المفاجئة
-service.on('error', (err) => {
-    console.error("⚠️ خطأ في السيرفر:", err.message);
 });
 
 service.login(settings.identity, settings.secret);
