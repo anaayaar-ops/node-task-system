@@ -15,16 +15,25 @@ const service = new WOLF();
 
 service.on('ready', async () => {
     try {
-        // الآن سيعمل await بدون مشاكل
-        await service.user().setStatus(wolfjs.Status.BUSY); 
+        // محاولة تغيير الحالة باستخدام تحديث الملف الشخصي مباشرة
+        // الرقم 2 يعبر غالباً عن حالة "مشغول" في بروتوكول وولف
+        await service.subscriber().update({
+            status: 2 
+        });
         
         console.log("------------------------------------------");
-        console.log(`✅ تم تسجيل الدخول باسم: ${service.currentSubscriber.nickname}`);
+        console.log(`✅ تم تسجيل الدخول: ${service.currentSubscriber.nickname}`);
         console.log(`🔴 الحالة الآن: مشغول (Busy)`);
         console.log("------------------------------------------");
     } catch (err) {
-        console.error("❌ فشل تغيير الحالة:", err.message);
-    } 
+        // إذا فشلت الطريقة أعلاه، نحاول الطريقة البديلة
+        try {
+             await service.currentSubscriber.setStatus(2);
+             console.log("🔴 تم تحديث الحالة للطريقة البديلة");
+        } catch (innerErr) {
+             console.error("❌ تعذر تغيير الحالة برمجياً في هذا الإصدار:", innerErr.message);
+        }
+    }
 });
 
 service.on('groupMessage', async (message) => {
