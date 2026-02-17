@@ -7,37 +7,47 @@ const settings = {
     identity: process.env.U_MAIL,
     secret: process.env.U_PASS,
     groupId: parseInt(process.env.EXIT_P), 
-    targetTrigger: process.env.MATCH_V, 
-    actionResponse: process.env.EXEC_V  
+    targetTrigger: "!س جلد خاص 51660277 80055399",   
+    actionResponse: "!س جلد"                
 };
 
-// التعديل هنا: نمرر إعدادات تمنع تحديث الحالة التلقائي عند الدخول
+
 const service = new WOLF({
     presence: {
         onlineState: 2 // نطلب من المكتبة الدخول مباشرة بحالة "مشغول" 
     }
-});
 
 service.on('ready', () => {
-    console.log("==========================================");
-    console.log(`✅ البوت متصل الآن باسم: ${service.currentSubscriber.nickname}`);
-    console.log(`🛠️ تم طلب الدخول بحالة 'مشغول' تلقائياً.`);
-    console.log("==========================================");
+    console.log("------------------------------------------");
+    console.log(`✅ تم تسجيل الدخول: ${service.currentSubscriber.nickname}`);
+    console.log(`👀 يراقب الآن الروم: ${settings.groupId}`);
+    console.log("------------------------------------------");
 });
 
-service.on('message', async (message) => {
-    const targetId = message.targetGroupId || message.recipientId;
+service.on('groupMessage', async (message) => {
+    const text = (message.content || message.body || "").trim();
 
-    if (targetId === settings.groupId) {
-        const text = (message.content || message.body || "").trim();
-
-        if (text === settings.targetTrigger) {
-            try {
+    if (message.targetGroupId === settings.groupId && text === settings.targetTrigger) {
+        
+        console.log(`🎯 تم رصد الهدف! جاري محاولة الإرسال...`);
+        
+        try {
+            // محاولة الطريقة الأولى (كـ دالة)
+            if (typeof service.messaging === 'function') {
+                await service.messaging().sendGroupMessage(settings.groupId, settings.actionResponse);
+            } 
+            // محاولة الطريقة الثانية (كـ خاصية)
+            else if (service.messaging && typeof service.messaging.sendGroupMessage === 'function') {
                 await service.messaging.sendGroupMessage(settings.groupId, settings.actionResponse);
-                console.log(`🚀 تم الجلد بنجاح!`);
-            } catch (err) {
-                console.error("❌ فشل الإرسال:", err.message);
             }
+            // محاولة الطريقة الثالثة (في الإصدارات القديمة جداً)
+            else if (service.messages && typeof service.messages.sendGroupMessage === 'function') {
+                await service.messages.sendGroupMessage(settings.groupId, settings.actionResponse);
+            }
+            
+            console.log(`🚀 تم الإرسال بنجاح!`);
+        } catch (err) {
+            console.error("❌ فشل الإرسال النهائي:", err.message);
         }
     }
 });
