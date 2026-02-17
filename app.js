@@ -14,28 +14,20 @@ const settings = {
 const service = new WOLF();
 
 service.on('ready', async () => {
+    // محاولة تغيير الحالة بأمر مباشر للسيرفر (بدون الحاجة لدوال معقدة)
     try {
-        // محاولة تغيير الحالة باستخدام تحديث الملف الشخصي مباشرة
-        // الرقم 2 يعبر غالباً عن حالة "مشغول" في بروتوكول وولف
-        await service.subscriber().update({
-            status: 2 
-        });
-        
-        console.log("------------------------------------------");
-        console.log(`✅ تم تسجيل الدخول: ${service.currentSubscriber.nickname}`);
-        console.log(`🔴 الحالة الآن: مشغول (Busy)`);
-        console.log("------------------------------------------");
-    } catch (err) {
-        // إذا فشلت الطريقة أعلاه، نحاول الطريقة البديلة
-        try {
-             await service.currentSubscriber.setStatus(2);
-             console.log("🔴 تم تحديث الحالة للطريقة البديلة");
-        } catch (innerErr) {
-             console.error("❌ تعذر تغيير الحالة برمجياً في هذا الإصدار:", innerErr.message);
-        }
+        await service.utility().updateSubscriber({ status: 2 }); 
+        console.log("🔴 تم تثبيت الحالة: مشغول");
+    } catch (e) {
+        // إذا لم تنجح، نحاول الطريقة المختصرة
+        service.currentSubscriber.status = 2;
+        console.log("⚠️ تم تحديث الحالة داخلياً");
     }
-});
 
+    console.log("------------------------------------------");
+    console.log(`✅ البوت يعمل الآن باسم: ${service.currentSubscriber.nickname}`);
+    console.log("------------------------------------------");
+});
 service.on('groupMessage', async (message) => {
     const text = (message.content || message.body || "").trim();
 
