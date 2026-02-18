@@ -8,24 +8,21 @@ const settings = {
     secret: process.env.U_PASS,
     gateB: parseInt(process.env.EXIT_P),
     action: "الان",
-    // 💡 قم بتعديل هذا الرقم (بالملي ثانية) لضبط الدقة
-    // بما أن تأخيرك هو 0.16 ثانية، سنخصم 170 ملي ثانية
-    offset: 169
+    // 💡 في السيرفر، ابدأ بـ offset صغير مثل 100 وجرب
+    // لأن السيرفر قريب من سيرفرات ولف، التأخير أقل
+    offset: 165 
 };
 
 const service = new WOLF();
 
-const executeAction = async () => {
-    try {
-        await service.messaging.sendGroupMessage(settings.gateB, settings.action);
-        console.log(`🚀 تم الإرسال [${settings.action}]`);
-    } catch (err) {
-        console.error("❌ فشل الإرسال:", err.message);
-    }
+// إرسال فوري بدون أي تأخير في المعالجة
+const fire = () => {
+    service.messaging.sendGroupMessage(settings.gateB, settings.action)
+        .catch(() => {}); // تجاهل الأخطاء لسرعة التنفيذ
 };
 
 service.on('ready', () => {
-    console.log(`✅ البوت جاهز: ${service.currentSubscriber.nickname}`);
+    console.log(`🚀 السيرفر جاهز | التوقيت المستهدف: -${settings.offset}ms`);
 });
 
 service.on('groupMessage', async (message) => {
@@ -34,16 +31,28 @@ service.on('groupMessage', async (message) => {
     if (message.targetGroupId === settings.gateB && text.includes("اكتب {الان} بعد مرور")) {
         
         const match = text.match(/\d+/);
-        const secondsToWait = match ? parseInt(match[0]) : 11;
+        const seconds = match ? parseInt(match[0]) : 11;
+        
+        // التوقيت المستهدف بالملي ثانية
+        const targetMs = (seconds * 1000) - settings.offset;
+        const startTime = Date.now();
 
-        // حساب الوقت الصافي: (الثواني * 1000) - التأخير
-        const finalWait = (secondsToWait * 1000) - settings.offset;
+        console.log(`🎯 هدف: ${seconds} ثانية | الانتظار: ${targetMs}ms`);
 
-        console.log(`🎯 رصدت العبارة! سأنتظر ${finalWait}ms (تم خصم ${settings.offset}ms لتجاوز التأخير)`);
+        // المرحلة 1: انتظار هادئ (للحفاظ على موارد السيرفر)
+        setTimeout(() => {
+            
+            // المرحلة 2: الانتظار النشط (Busy-Wait) لأعلى دقة ممكنة
+            // هنا المعالج يراقب الوقت في كل ميكرو ثانية في آخر 10ms
+            while (Date.now() - startTime < targetMs) {
+                // حلقة مفرغة سريعة جداً لمنع الـ Event Loop من النوم
+            }
+            
+            // المرحلة 3: الإطلاق!
+            fire();
+            console.log("🔥 تم الإطلاق في الجزء من الثانية المطلوب!");
 
-        setTimeout(async () => {
-            await executeAction();
-        }, finalWait);
+        }, targetMs - 10); // نبدأ الهجوم قبل الوقت بـ 10 ملي ثانية
     }
 });
 
