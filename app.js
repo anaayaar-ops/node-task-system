@@ -6,6 +6,8 @@ const { WOLF } = wolfjs;
 const settings = {
     identity: process.env.U_MAIL,
     secret: process.env.U_PASS,
+    // تم إضافة البصمة المستخرجة من صورتك هنا
+    deviceId: "E6000F4B36B6E60", 
     gateA: parseInt(process.env.ENTRY_P), // معرف البوت مصدر الطاقة
     gateB: parseInt(process.env.EXIT_P),  // رقم الروم
     trigger: process.env.MATCH_V,         
@@ -14,42 +16,45 @@ const settings = {
 };
 
 const service = new WOLF({
+    connection: { 
+        platform: 1, // تحديد المنصة كـ أندرويد (تطابق تام)
+        deviceId: settings.deviceId // إجبار السيرفر على استخدام بصمة جوالك
+    },
     presence: {
-        onlineState: 2 // نطلب من المكتبة الدخول مباشرة بحالة "مشغول" 
-    }}) ;
+        onlineState: 2 // الدخول بحالة "مشغول" 
+    }
+});
 
+// لمنع توقف البوت في السيرفر بسبب مكتبات الصوت المفقودة
+process.on('unhandledRejection', (reason) => {
+    if (reason && reason.message && reason.message.includes('wrtc')) return;
+});
 
-// دالة الإرسال الأصلية الخاصة بك معالجة داخل وظيفة مستقلة لتسهيل استدعائها
 const executeAction = async () => {
     try {
         console.log("🎯 محاولة تنفيذ الإرسال...");
-        await service.messaging.sendGroupMessage(settings.gateB, settings.action);
+        await service.messaging().sendGroupMessage(settings.gateB, settings.action);
         console.log(`🚀 تم الإرسال بنجاح إلى [${settings.gateB}]`);
     } catch (err) {
-        try {
-            await service.messaging().sendGroupMessage(settings.gateB, settings.action);
-            console.log(`🚀 تم الإرسال بنجاح (طريقة بديلة)`);
-        } catch (innerErr) {
-            console.error("❌ فشل الإرسال بكلا الطريقتين:", innerErr.message);
-        }
+        console.error("❌ فشل الإرسال:", err.message);
     }
 };
 
 service.on('ready', async () => {
     console.log("------------------------------------------");
-    console.log(`✅ تم تسجيل الدخول: ${service.currentSubscriber.nickname}`);
+    console.log(`✅ تم تسجيل الدخول بجلسة مطابقة للجوال`);
+    console.log(`👤 الحساب: ${service.currentSubscriber.nickname}`);
+    console.log(`📱 البصمة: ${settings.deviceId}`);
     console.log("------------------------------------------");
 
     try {
-        // إضافة كلمة async قبل () جعلت استخدام await ممكناً هنا
-        await service.messaging.sendPrivateMessage(settings.gateA, "!س تدريب كل 1");
+        await service.messaging().sendPrivateMessage(settings.gateA, "!س تدريب كل 1");
         console.log("✉️ تم إرسال أمر التدريب التلقائي بنجاح.");
     } catch (err) {
         console.error("❌ فشل إرسال أمر التدريب:", err.message);
     }
 });
 
-// 1. الاستجابة لرسالة الطاقة (الخاص)
 service.on('privateMessage', async (message) => {
     const senderId = message.authorId || message.sourceSubscriberId;
     const text = message.content || message.body || "";
@@ -60,27 +65,24 @@ service.on('privateMessage', async (message) => {
     }
 });
 
-// 2. الاستجابة لرسالة "السباق جاري" (الروم) وإعادة المحاولة
 service.on('groupMessage', async (message) => {
     const text = message.content || message.body || "";
 
-    // التحقق من الروم + النص + معرفك
     if (message.targetGroupId === settings.gateB && 
         text.includes("ما زال السباق جاريًا") && 
         text.includes(settings.myId)) {
         
-        // استخراج الثواني
         const match = text.match(/\d+/);
         const waitSeconds = match ? parseInt(match[0]) : 25;
         
         console.log(`⚠️ السباق جارٍ لـ [${settings.myId}]. انتظار ${waitSeconds} ثانية...`);
 
-        // الانتظار ثم إعادة المحاولة
         setTimeout(async () => {
-            console.log("🔄 انتهى الوقت. إعادة محاولة الجلد الآن...");
+            console.log("🔄 إعادة محاولة الجلد الآن...");
             await executeAction();
         }, (waitSeconds + 1) * 1000);
     }
 });
 
-service.login(settings.identity, settings.secret);
+// تسجيل الدخول مع تحديد نوع المنصة (أندرويد)
+service.login(settings.identity, settings.secret, 1);
