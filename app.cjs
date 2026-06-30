@@ -1,21 +1,21 @@
 require('dotenv').config();
 const wolf = require('wolf.js');
 
-// نحاول ضبط الجهاز مباشرة بالقيمة الرقمية 7 (وهي تمثل Android)
+// تجربة تغيير المفتاح من 'device' إلى 'deviceType'
 const client = new wolf.WOLF({
-    device: 7 
+    deviceType: 7 // تجربة مفتاح مختلف
 });
 
 client.on('ready', async () => {
-    console.log('تم الاتصال بنجاح!');
+    // طباعة الجهاز الحالي للتأكد من القيمة
+    console.log('نوع الجهاز الحالي المسجل هو:', client.device);
     
     try {
         await client.setOnlineState(wolf.OnlineState.BUSY);
-        console.log('تم ضبط الحالة إلى مشغول (Busy)');
+        console.log('تم ضبط الحالة بنجاح');
     } catch (err) {
-        console.error('فشل تحديث الحالة:', err);
+        console.error('فشل:', err);
     }
 });
 
-client.login(process.env.U_MAIL, process.env.U_PASS)
-    .catch(err => console.error('خطأ في تسجيل الدخول:', err));
+client.login(process.env.U_MAIL, process.env.U_PASS);
