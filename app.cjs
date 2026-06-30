@@ -6,11 +6,11 @@ const client = new wolf.WOLF({
 });
 
 client.on('ready', async () => {
-    // قمنا بإزالة السطر الذي يحاول الوصول لـ nickname لتجنب الخطأ
     console.log('تم تسجيل الدخول بنجاح!');
 
     try {
-        await client.presence.update(wolf.OnlineState.BUSY);
+        // بدلاً من client.presence.update، جرب استخدام الدالة مباشرة:
+        await client.presence(wolf.OnlineState.BUSY);
         console.log('تم ضبط الحالة بنجاح إلى: مشغول (Busy)');
     } catch (err) {
         console.error('فشل تحديث الحالة:', err);
