@@ -5,16 +5,15 @@ const client = new wolf.WOLF({
     device: wolf.DeviceType.ANDROID
 });
 
-client.on('ready', async () => {
-    console.log('تم تسجيل الدخول بنجاح!');
-
-    try {
-        // بدلاً من client.presence.update، جرب استخدام الدالة مباشرة:
-        await client.presence(wolf.OnlineState.BUSY);
-        console.log('تم ضبط الحالة بنجاح إلى: مشغول (Busy)');
-    } catch (err) {
-        console.error('فشل تحديث الحالة:', err);
-    }
+client.on('ready', () => {
+    console.log('تم الاتصال! جاري البحث عن دالة الحالة...');
+    
+    // طباعة كل خصائص الكائن client
+    // هذا سيكشف لنا الدوال المتاحة
+    const methods = Object.getOwnPropertyNames(Object.getPrototypeOf(client));
+    console.log('الدوال المتاحة في client هي:', methods);
+    
+    // سأنتظر منك نسخ هذه القائمة في الرد القادم
 });
 
 client.login(process.env.U_MAIL, process.env.U_PASS)
