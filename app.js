@@ -10,10 +10,12 @@ const settings = {
     gateB: parseInt(process.env.EXIT_P),  // رقم الروم
     trigger: process.env.MATCH_V,         
     action: process.env.EXEC_V,
-    myId: "80055399"                      // معرفك الخاص للمطابقة
+    myId: "80055399 "                      // معرفك الخاص للمطابقة
 };
 
-// دالة الإرسال الأصلية الخاصة بك معالجة داخل وظيفة مستقلة لتسهيل استدعائها
+});
+
+// دالة الإرسال
 const executeAction = async () => {
     try {
         console.log("🎯 محاولة تنفيذ الإرسال...");
@@ -34,11 +36,10 @@ service.on('ready', async () => {
     console.log(`✅ تم تسجيل الدخول: ${service.currentSubscriber.nickname}`);
     console.log("------------------------------------------");
 
-    // السطر المطلوب إضافته
+    // تحديث الحالة عند الجاهزية
     await service.profile.updateStatus(wolfjs.Status.BUSY);
 
     try {
-        // إضافة كلمة async قبل () جعلت استخدام await ممكناً هنا
         await service.messaging.sendPrivateMessage(settings.gateA, "!س تدريب كل 1");
         console.log("✉️ تم إرسال أمر التدريب التلقائي بنجاح.");
     } catch (err) {
@@ -61,18 +62,15 @@ service.on('privateMessage', async (message) => {
 service.on('groupMessage', async (message) => {
     const text = message.content || message.body || "";
 
-    // التحقق من الروم + النص + معرفك
     if (message.targetGroupId === settings.gateB && 
         text.includes("ما زال السباق جاريًا") && 
         text.includes(settings.myId)) {
         
-        // استخراج الثواني
         const match = text.match(/\d+/);
         const waitSeconds = match ? parseInt(match[0]) : 25;
         
         console.log(`⚠️ السباق جارٍ لـ [${settings.myId}]. انتظار ${waitSeconds} ثانية...`);
 
-        // الانتظار ثم إعادة المحاولة
         setTimeout(async () => {
             console.log("🔄 انتهى الوقت. إعادة محاولة الجلد الآن...");
             await executeAction();
