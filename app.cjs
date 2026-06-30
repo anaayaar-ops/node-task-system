@@ -2,11 +2,6 @@ require('dotenv').config();
 const wolf = require('wolf.js');
 
 // تجربة تغيير المفتاح من 'device' إلى 'deviceType'
-const client = new wolf.WOLF({
-    config: {
-        device: 7
-    }
-});
 
 
 client.on('ready', async () => {
@@ -21,4 +16,7 @@ client.on('ready', async () => {
     }
 });
 
-client.login(process.env.U_MAIL, process.env.U_PASS);
+client.login(process.env.U_MAIL, process.env.U_PASS, {
+    device: wolf.DeviceType.ANDROID
+});
+
