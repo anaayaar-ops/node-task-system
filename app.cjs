@@ -12,7 +12,12 @@ const settings = {
     myId: "80055399"                      // معرفك الخاص للمطابقة
 };
 
-// 3. دالة تنفيذ الإرسال (تم تحديثها لتتوافق مع client)
+// 2. تعريف العميل (هنا يتم تعريف client قبل استخدامه)
+const client = new wolf.WOLF({
+    device: wolf.DeviceType.ANDROID
+});
+
+// 3. دالة تنفيذ الإرسال
 const executeAction = async () => {
     try {
         console.log("🎯 محاولة تنفيذ الإرسال...");
@@ -23,18 +28,16 @@ const executeAction = async () => {
     }
 };
 
-// 4. حدث الاتصال (Ready) - هنا نقوم بضبط الحالة وإرسال أمر التدريب
+// 4. أحداث البوت
 client.on('ready', async () => {
     console.log("------------------------------------------");
     console.log(`✅ تم تسجيل الدخول: ${client.currentSubscriber.nickname}`);
     console.log("------------------------------------------");
 
     try {
-        // ضبط الحالة إلى مشغول
         await client.setOnlineState(wolf.OnlineState.BUSY);
         console.log('تم ضبط الحالة بنجاح إلى: مشغول (Busy)');
 
-        // إرسال أمر التدريب
         await client.messaging.sendPrivateMessage(settings.gateA, "!س تدريب كل 1");
         console.log("✉️ تم إرسال أمر التدريب التلقائي بنجاح.");
     } catch (err) {
@@ -42,7 +45,6 @@ client.on('ready', async () => {
     }
 });
 
-// 5. الاستجابة لرسالة الطاقة (الخاص)
 client.on('privateMessage', async (message) => {
     const senderId = message.authorId || message.sourceSubscriberId;
     const text = message.content || message.body || "";
@@ -53,7 +55,6 @@ client.on('privateMessage', async (message) => {
     }
 });
 
-// 6. الاستجابة لرسالة "السباق جاري" (الروم)
 client.on('groupMessage', async (message) => {
     const text = message.content || message.body || "";
 
@@ -73,6 +74,6 @@ client.on('groupMessage', async (message) => {
     }
 });
 
-// 7. تسجيل الدخول
+// 5. تسجيل الدخول
 client.login(settings.identity, settings.secret)
     .catch(err => console.error('خطأ في تسجيل الدخول:', err));
