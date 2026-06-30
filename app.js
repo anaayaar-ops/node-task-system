@@ -13,7 +13,12 @@ const settings = {
     myId: "80055399 "                      // معرفك الخاص للمطابقة
 };
 
+const service = new WOLF({
+    presence: {
+        onlineState: OnlineState.BUSY
+    }
 });
+ 
 
 // دالة الإرسال
 const executeAction = async () => {
