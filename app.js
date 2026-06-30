@@ -13,12 +13,6 @@ const settings = {
     myId: "80055399"                      // معرفك الخاص للمطابقة
 };
 
-const service = new WOLF({
-    presence: {
-     await client.profile.updateStatus(wolfjs.Status.BUSY);
-    }}) ;
-
-
 // دالة الإرسال الأصلية الخاصة بك معالجة داخل وظيفة مستقلة لتسهيل استدعائها
 const executeAction = async () => {
     try {
@@ -39,6 +33,9 @@ service.on('ready', async () => {
     console.log("------------------------------------------");
     console.log(`✅ تم تسجيل الدخول: ${service.currentSubscriber.nickname}`);
     console.log("------------------------------------------");
+
+    // السطر المطلوب إضافته
+    await service.profile.updateStatus(wolfjs.Status.BUSY);
 
     try {
         // إضافة كلمة async قبل () جعلت استخدام await ممكناً هنا
