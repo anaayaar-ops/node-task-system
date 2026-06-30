@@ -3,15 +3,18 @@ const wolf = require('wolf.js');
 
 // تجربة تغيير المفتاح من 'device' إلى 'deviceType'
 const client = new wolf.WOLF({
-    deviceType: 7 // تجربة مفتاح مختلف
+    config: {
+        device: 7
+    }
 });
+
 
 client.on('ready', async () => {
     // طباعة الجهاز الحالي للتأكد من القيمة
     console.log('نوع الجهاز الحالي المسجل هو:', client.device);
     
     try {
-        await client.setOnlineState(wolf.OnlineState.BUSY);
+        await client.setOnlineState(wolf.OnlineState.AWAY);
         console.log('تم ضبط الحالة بنجاح');
     } catch (err) {
         console.error('فشل:', err);
