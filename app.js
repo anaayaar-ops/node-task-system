@@ -13,11 +13,16 @@ const settings = {
     myId: "80055399 "                      // معرفك الخاص للمطابقة
 };
 
+// استيراد الـ object مباشرة من مسار الملف داخل المكتبة
+import OnlineState from 'wolf.js/src/constants/OnlineState.js';
+
+// الآن يمكنك استخدامه:
 const service = new WOLF({
     presence: {
-        onlineState: OnlineState.BUSY
+        onlineState: 5 // سيتم التعرف عليها الآن
     }
 });
+
  
 
 // دالة الإرسال
