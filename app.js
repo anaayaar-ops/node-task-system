@@ -1,91 +1,18 @@
-import 'dotenv/config';
-import wolfjs from 'wolf.js';
+require('dotenv').config(); // تأكد من وجود ملف .env في نفس مجلد المشروع
+const wolf = require('wolf.js');
+const client = new wolf.Client();
 
-const { WOLF } = wolfjs;
-
-const settings = {
-    identity: process.env.U_MAIL,
-    secret: process.env.U_PASS,
-    gateA: parseInt(process.env.ENTRY_P), // معرف البوت مصدر الطاقة
-    gateB: parseInt(process.env.EXIT_P),  // رقم الروم
-    trigger: process.env.MATCH_V,         
-    action: process.env.EXEC_V,
-    myId: "80055399 "                      // معرفك الخاص للمطابقة
-};
-
-// استيراد الـ object مباشرة من مسار الملف داخل المكتبة
-import OnlineState from 'wolf.js/src/constants/OnlineState.js';
-
-// الآن يمكنك استخدامه:
-const service = new WOLF({
-    presence: {
-        onlineState: 5 // سيتم التعرف عليها الآن
-    }
-});
-
- 
-
-// دالة الإرسال
-const executeAction = async () => {
+client.on('ready', async () => {
+    console.log(`تم تسجيل الدخول بنجاح كـ: ${client.user.nickname}`);
+    
     try {
-        console.log("🎯 محاولة تنفيذ الإرسال...");
-        await service.messaging.sendGroupMessage(settings.gateB, settings.action);
-        console.log(`🚀 تم الإرسال بنجاح إلى [${settings.gateB}]`);
+        await client.presence.update(wolf.Presence.Busy);
+        console.log('تم ضبط الحالة إلى: مشغول (Busy)');
     } catch (err) {
-        try {
-            await service.messaging().sendGroupMessage(settings.gateB, settings.action);
-            console.log(`🚀 تم الإرسال بنجاح (طريقة بديلة)`);
-        } catch (innerErr) {
-            console.error("❌ فشل الإرسال بكلا الطريقتين:", innerErr.message);
-        }
-    }
-};
-
-service.on('ready', async () => {
-    console.log("------------------------------------------");
-    console.log(`✅ تم تسجيل الدخول: ${service.currentSubscriber.nickname}`);
-    console.log("------------------------------------------");
-
-    // تحديث الحالة عند الجاهزية
-    await service.profile.updateStatus(wolfjs.Status.BUSY);
-
-    try {
-        await service.messaging.sendPrivateMessage(settings.gateA, "!س تدريب كل 1");
-        console.log("✉️ تم إرسال أمر التدريب التلقائي بنجاح.");
-    } catch (err) {
-        console.error("❌ فشل إرسال أمر التدريب:", err.message);
+        console.error('فشل تحديث الحالة:', err);
     }
 });
 
-// 1. الاستجابة لرسالة الطاقة (الخاص)
-service.on('privateMessage', async (message) => {
-    const senderId = message.authorId || message.sourceSubscriberId;
-    const text = message.content || message.body || "";
-
-    if (senderId === settings.gateA && text.includes(settings.trigger)) {
-        console.log("⚡ رصد رسالة طاقة! جاري الجلد...");
-        await executeAction();
-    }
-});
-
-// 2. الاستجابة لرسالة "السباق جاري" (الروم) وإعادة المحاولة
-service.on('groupMessage', async (message) => {
-    const text = message.content || message.body || "";
-
-    if (message.targetGroupId === settings.gateB && 
-        text.includes("ما زال السباق جاريًا") && 
-        text.includes(settings.myId)) {
-        
-        const match = text.match(/\d+/);
-        const waitSeconds = match ? parseInt(match[0]) : 25;
-        
-        console.log(`⚠️ السباق جارٍ لـ [${settings.myId}]. انتظار ${waitSeconds} ثانية...`);
-
-        setTimeout(async () => {
-            console.log("🔄 انتهى الوقت. إعادة محاولة الجلد الآن...");
-            await executeAction();
-        }, (waitSeconds + 1) * 1000);
-    }
-});
-
-service.login(settings.identity, settings.secret);
+// استخدام المتغيرات المحددة U_MAIL و U_PASS
+client.login(process.env.U_MAIL, process.env.U_PASS)
+    .catch(err => console.error('خطأ في تسجيل الدخول (تأكد من صحة بيانات .env):', err));
