@@ -1,17 +1,15 @@
 require('dotenv').config();
 const wolf = require('wolf.js');
 
-// 1. إنشاء العميل مع تحديد الجهاز كـ أندرويد (Android)
 const client = new wolf.WOLF({
     device: wolf.DeviceType.ANDROID
 });
 
 client.on('ready', async () => {
-    console.log(`تم تسجيل الدخول بنجاح كـ: ${client.user.nickname}`);
-    console.log('جاري ضبط الحالة إلى: مشغول (Busy)');
+    // قمنا بإزالة السطر الذي يحاول الوصول لـ nickname لتجنب الخطأ
+    console.log('تم تسجيل الدخول بنجاح!');
 
     try {
-        // 2. تغيير الحالة إلى مشغول باستخدام OnlineState
         await client.presence.update(wolf.OnlineState.BUSY);
         console.log('تم ضبط الحالة بنجاح إلى: مشغول (Busy)');
     } catch (err) {
@@ -19,6 +17,5 @@ client.on('ready', async () => {
     }
 });
 
-// تسجيل الدخول
 client.login(process.env.U_MAIL, process.env.U_PASS)
     .catch(err => console.error('خطأ في تسجيل الدخول:', err));
